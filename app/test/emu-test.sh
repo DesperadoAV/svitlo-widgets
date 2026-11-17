@@ -32,7 +32,7 @@ shot 02_vidzhet
 check "віджет: усі 6 карток влазять ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'cards 6 shown 6 hidden 0'"
 A shell am start -S -W -n $PKG/.PreviewActivity --es toggle 3.2 >/dev/null 2>&1; sleep 4
 shot 03_rozkryto_3_2
-check "натискання на чергу 3.2 розкриває графік; щоб уліз, нижня картка ховається («ще 1») ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'shown 5 hidden 1 expanded \[3.2\]'"
+check "натискання на чергу 3.2 розкриває графік, усі 6 карток лишаються ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'shown 6 hidden 0 expanded \[3.2\]'"
 A shell am start -S -W -n $PKG/.PreviewActivity --es queues 3.2,6.1 --es toggle 6.1 >/dev/null 2>&1; sleep 4
 shot 04_lyshe_2_cherhy
 check "вибір черг: 2 картки, обидві розкриті, із «завтра» ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'cards 2 shown 2 hidden 0 expanded \[6.1, 3.2\] tomorrow \[6.1, 3.2\]'"

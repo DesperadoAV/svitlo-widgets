@@ -36,7 +36,7 @@ public class ConfigActivity extends Activity {
         Ui.button(this, row, "Усі", 0xFF3A3A3A, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { for (CheckBox x : boxes) x.setChecked(true); } });
         Ui.button(this, row, "Зберегти", 0xFF2980B9, 2).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { save(); } });
         Ui.button(this, root, "🔔 Сповіщення про світло…", 0xFF3A3A3A, 0).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(ConfigActivity.this, NotifyActivity.class)); } });
-        Ui.text(this, root, "Порада: на віджеті натисніть на чергу — розкриється графік на сьогодні й завтра. Розмір віджета можна змінити, затиснувши його пальцем: що більший віджет, то більше карток і графіків влазить.", 13, Ui.HINT, false).setPadding(0, Ui.dp(this, 12), 0, 0);
+        Ui.text(this, root, "Порада: на віджеті натисніть на чергу — розкриється графік на сьогодні й завтра. Розмір віджета можна змінити, затиснувши його пальцем: що більший віджет, то більше карток і графіків влазить. Натисніть назву «Світло В Славутичі» на віджеті — відкриється застосунок із мапою черг і сайтом.", 13, Ui.HINT, false).setPadding(0, Ui.dp(this, 12), 0, 0);
         setContentView(sv);
         fill(Data.cached(this));
         if (Data.cached(this) == null) {

@@ -140,7 +140,10 @@ function statusView(S, open, mine) {
     }
     return t;
   });
-  const text = `💡 <b>Світло В Славутичі</b> · дані на ${fmtTime(now)}\n\n${lines.join("\n")}\n\n<i>Натисніть на чергу — покажу графік.</i>`;
+  // перший рядок — коротке зведення (його видно в списку чатів і у віджеті Telegram на робочому столі)
+  const grp = (st, icon) => { const l = S.queues.filter(q => q.state === st).map(q => q.name); return l.length ? icon + " " + l.join(" ") : ""; };
+  const sum = [grp(1, "🟢"), grp(0, "🔴"), grp(-1, "⚪️")].filter(Boolean).join("  ·  ");
+  const text = `<b>${sum}</b>\n💡 Світло В Славутичі · дані на ${fmtTime(now)}\n\n${lines.join("\n")}\n\n<i>Натисніть на чергу — покажу графік.</i>`;
   const qb = S.queues.map(q => ({ text: (open.includes(q.name) ? "▾ " : "▸ ") + q.name + (mine.includes(q.name) ? " 🔔" : ""), callback_data: "e:" + q.name }));
   const rows = [];
   for (let i = 0; i < qb.length; i += 3) rows.push(qb.slice(i, i + 3));
@@ -313,19 +316,19 @@ function evLost(q, p, S) {
   const plan = end ? `🗓 За графіком відключення до ${at(end, S)}` : "🗓 Позапланово (за графіком світло мало бути)";
   const was = p[1] ? `\n☀️ Світло було: ${dur(t - p[1])}` : "";
   return { kind: "lost", q: q.name, title: `🔴 Черга ${q.name}: світло зникло`, body: `о ${fmtTime(t)}` + (p[1] ? ` · було ${dur(t - p[1])}` : "") + (end ? ` · за графіком до ${at(end, S)}` : " · позапланово"),
-    text: `🔴 <b>Черга ${q.name}: світло зникло</b>\n🕓 о ${fmtTime(t)}${was}\n${plan}` };
+    text: `🔴 <b>${q.name}: світло зникло о ${fmtTime(t)}</b>${was}\n${plan}` };
 }
 function evBack(q, p, S) {
   const t = q.since || S.now, nx = nextOutage(q, S, t);
   const was = p[1] ? `\n🌑 Світла не було: ${dur(t - p[1])}` : "";
   const next = nx ? `\n🗓 Наступне відключення за графіком: ${at(nx.start, S)}–${at(nx.end, S)}` : "";
   return { kind: "back", q: q.name, title: `🟢 Черга ${q.name}: світло з'явилось`, body: `о ${fmtTime(t)}` + (p[1] ? ` · не було ${dur(t - p[1])}` : "") + (nx ? ` · далі за графіком ${at(nx.start, S)}` : ""),
-    text: `🟢 <b>Черга ${q.name}: світло з'явилось</b>\n🕓 о ${fmtTime(t)}${was}${next}` };
+    text: `🟢 <b>${q.name}: світло з'явилось о ${fmtTime(t)}</b>${was}${next}` };
 }
 function evWarn(q, nx, S, now) {
   const m = Math.max(1, Math.round((nx.start - now) / 60000));
   return { kind: "warn", q: q.name, title: `⏰ Черга ${q.name}: за ${m} хв відключення`, body: `за графіком ${at(nx.start, S)}–${at(nx.end, S)}`,
-    text: `⏰ <b>Черга ${q.name}: за ${m} хв відключення за графіком</b>\n🕓 ${at(nx.start, S)}–${at(nx.end, S)}` };
+    text: `⏰ <b>${q.name}: відключення о ${at(nx.start, S)}</b>\n🕓 за графіком ${at(nx.start, S)}–${at(nx.end, S)}, через ${m} хв` };
 }
 async function events(env, S) {
   const now = Date.now(), evs = [];

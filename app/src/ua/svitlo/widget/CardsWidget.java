@@ -107,7 +107,7 @@ public class CardsWidget extends AppWidgetProvider {
 
     static Plan plan(Context c, Data d, int id, List<Data.Q> all, int hDp) {
         float fs = Math.max(1f, c.getResources().getConfiguration().fontScale);
-        final float avail = hDp - 12 - 30 * fs - 34 * fs;   // поля, заголовок, кнопки внизу
+        final float avail = hDp - 12 - Math.max(28, 20 * fs) - 2;   // поля і заголовок (кнопок унизу немає)
         Plan p = new Plan();
         p.rows.addAll(all);
         List<String> ex = Prefs.expanded(c, id), names = new ArrayList<>();
@@ -133,7 +133,8 @@ public class CardsWidget extends AppWidgetProvider {
         return p;
     }
     static float cost(Plan p, int total, float fs) {
-        return p.rows.size() * 33 * fs + (p.open.size() + p.open2.size()) * 34 * fs + (p.rows.size() < total ? 16 * fs : 0);
+        // картка: відступи 11 + рядок ~22·шрифт; день графіка: відступи 4 + рядок ~19·шрифт + смужка 8; «ще N»: 2 + ~16·шрифт
+        return p.rows.size() * (11 + 22 * fs) + (p.open.size() + p.open2.size()) * (12 + 19 * fs) + (p.rows.size() < total ? 2 + 16 * fs : 0);
     }
     /** Сховати нижню картку (спершу — нерозкриту). false — ховати нічого. */
     static boolean hideOne(Plan p, boolean keepOpen) {
@@ -142,8 +143,27 @@ public class CardsWidget extends AppWidgetProvider {
         Data.Q q = p.rows.remove(p.rows.size() - 1); p.open.remove(q.name); return true;
     }
 
-    /** hDp > 0 — висота задана (перегляд у застосунку), інакше — з робочого стола. */
+    /**
+     * hDp > 0 — висота задана (перегляд у застосунку). Інакше — з робочого стола: на Android 12+ робочий стіл
+     * повідомляє точні розміри віджета (вертикально й горизонтально) — готуємо вигляд для кожного, і він сам бере потрібний.
+     */
     static RemoteViews build(Context c, int id, boolean loading, int hDp) {
+        if (hDp > 0) return buildFor(c, id, loading, hDp);
+        if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                Bundle o = AppWidgetManager.getInstance(c).getAppWidgetOptions(id);
+                java.util.ArrayList<android.util.SizeF> sizes = o == null ? null : o.<android.util.SizeF>getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
+                if (sizes != null && !sizes.isEmpty()) {
+                    java.util.Map<android.util.SizeF, RemoteViews> m = new java.util.HashMap<>();
+                    for (android.util.SizeF s : sizes) if (m.size() < 16 && !m.containsKey(s)) m.put(s, buildFor(c, id, loading, Math.round(s.getHeight())));
+                    return new RemoteViews(m);
+                }
+            } catch (Exception ignored) { }
+        }
+        return buildFor(c, id, loading, heightDp(c, id));
+    }
+
+    static RemoteViews buildFor(Context c, int id, boolean loading, int hDp) {
         RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget);
         Data d = Data.cached(c);
         String err = Data.prefs(c).getString("error", null);
@@ -156,7 +176,7 @@ public class CardsWidget extends AppWidgetProvider {
         rv.removeAllViews(R.id.cards);
         List<Data.Q> all = new ArrayList<>();
         if (d != null) { List<String> sel = Prefs.selected(c, id); for (Data.Q q : d.qs) if (sel == null || sel.contains(q.name)) all.add(q); }
-        Plan p = d == null ? new Plan() : plan(c, d, id, all, hDp > 0 ? hDp : heightDp(c, id));
+        Plan p = d == null ? new Plan() : plan(c, d, id, all, hDp);
         long now = System.currentTimeMillis();
         for (int i = 0; i < p.rows.size(); i++) rv.addView(R.id.cards, card(c, d, id, i, p.rows.get(i), p.open.contains(p.rows.get(i).name), p.open2.contains(p.rows.get(i).name), now));
         rv.setViewVisibility(R.id.empty, p.rows.isEmpty() ? View.VISIBLE : View.GONE);
@@ -169,15 +189,12 @@ public class CardsWidget extends AppWidgetProvider {
         Intent s = new Intent(c, ConfigActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id).setData(Uri.parse("svitlo://cfg/" + id));
         rv.setOnClickPendingIntent(R.id.settings, PendingIntent.getActivity(c, id * 10 + 3, s, PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
         rv.setOnClickPendingIntent(R.id.title, PendingIntent.getActivity(c, id * 10 + 4, new Intent(c, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
-        String map = d != null ? d.map : Data.DEFAULT_MAP, site = d != null ? d.site : Data.DEFAULT_SITE;
-        rv.setOnClickPendingIntent(R.id.map, PendingIntent.getActivity(c, id * 10 + 5, new Intent(Intent.ACTION_VIEW, Uri.parse(map)), PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
-        rv.setOnClickPendingIntent(R.id.site, PendingIntent.getActivity(c, id * 10 + 6, new Intent(Intent.ACTION_VIEW, Uri.parse(site)), PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
         return rv;
     }
 
     static RemoteViews card(Context c, Data d, int id, int pos, Data.Q q, boolean ex, boolean ex2, long now) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.item);
-        v.setTextViewText(R.id.name, "Черга " + q.name + (ex ? " ▴" : " ▾"));
+        v.setTextViewText(R.id.name, "Черга " + q.name);
         v.setTextViewText(R.id.status, q.state > 0 ? "Світло є" : q.state == 0 ? "Світла немає" : "Немає даних");
         v.setTextColor(R.id.status, q.state > 0 ? 0xFF2ECC71 : q.state == 0 ? 0xFFFF6B6B : 0xFF9AA5B1);
         v.setInt(R.id.card, "setBackgroundResource", q.state > 0 ? R.drawable.card_on : q.state == 0 ? R.drawable.card_off : R.drawable.card_na);

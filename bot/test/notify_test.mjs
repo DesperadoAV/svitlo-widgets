@@ -63,14 +63,14 @@ L=await press(1004,"n"); chk("кнопка «🔔» відкриває меню"
 // перший запуск: запам'ятовує стан; 3.2 — відключення о 15:40, зараз 15:30 → попередження
 penv.FCM_SA=SA;
 let T=await tick();
-chk("за 10 хв до планового відключення — попередження тим, хто його не вимкнув (1001 так, 1002 ні)", T.tg.length===1 && T.tg[0].b.chat_id===1001 && /за 10 хв відключення/.test(T.tg[0].b.text) && T.tg[0].b.text.includes("15:40–17:00"), T.tg.map(x=>x.b.chat_id+":"+x.b.text).join(" / "));
+chk("за 10 хв до планового відключення — попередження тим, хто його не вимкнув (1001 так, 1002 ні)", T.tg.length===1 && T.tg[0].b.chat_id===1001 && /^⏰ <b>3\.2: відключення о 15:40<\/b>/.test(T.tg[0].b.text) && T.tg[0].b.text.includes("15:40–17:00, через 10 хв"), T.tg.map(x=>x.b.chat_id+":"+x.b.text).join(" / "));
 chk("…і в застосунок: тема w_3.2, дані (kind, q, title, body), висока важливість", T.fcm.length===1 && T.fcm[0].m.topic==="w_3.2" && T.fcm[0].m.data.kind==="warn" && T.fcm[0].m.data.q==="3.2" && /за 10 хв/.test(T.fcm[0].m.data.title) && T.fcm[0].m.android.priority==="HIGH" && T.fcm[0].auth==="Bearer AT1" && T.fcm[0].u.includes("/projects/svitlo-test/"), T.fcm[0] && JSON.stringify(T.fcm[0].m));
 later(1); T=await tick(); chk("через хвилину попередження не повторюється", T.tg.length===0 && T.fcm.length===0);
 // 3.2 згасла о 15:41 (у межах планового)
 later(9); await tick(); Object.assign(Q("3.2"),{state:"off",since:NOW}); later(1); T=await tick();
 const lost=T.tg.map(x=>x.b.chat_id).sort().join(",");
 chk("3.2 згасла — повідомлення обом підписаним", lost==="1001,1002", lost);
-chk("…текст: час, скільки було світло, за графіком до 17:00", /світло зникло/.test(T.tg[0].b.text) && /Світло було: 5 год 1\d хв/.test(T.tg[0].b.text) && /до 17:00/.test(T.tg[0].b.text), T.tg[0].b.text.replace(/\n/g," | "));
+chk("…текст: час, скільки було світло, за графіком до 17:00", /^🔴 <b>3\.2: світло зникло о 15:40<\/b>/.test(T.tg[0].b.text) && /Світло було: 5 год 1\d хв/.test(T.tg[0].b.text) && /до 17:00/.test(T.tg[0].b.text), T.tg[0].b.text.replace(/\n/g," | "));
 chk("…Firebase: тема q_3.2, kind=lost; доступ Google отримано один раз", T.fcm.length===1 && T.fcm[0].m.topic==="q_3.2" && T.fcm[0].m.data.kind==="lost" && oauth===1, oauth);
 // 6.1 з'явилась, 3.2 повернулась позапланово рано
 later(5); Object.assign(Q("6.1"),{state:"on",since:NOW}); Object.assign(Q("3.2"),{state:"on",since:NOW}); T=await tick();
