@@ -17,12 +17,13 @@ import android.widget.TextView;
 
 /** Головний екран: сайт із картками черг і мапою + кнопки «Мапа» і «Додати віджет». */
 public class MainActivity extends Activity {
-    WebView web;
+    WebView web; String testSite;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         String u = getIntent().getStringExtra("data_url");                    // для автоматичних тестів: інша адреса даних
         if (u != null) { Data.prefs(this).edit().putString("data_url", u).remove("data").apply(); }
+        testSite = getIntent().getStringExtra("site_url");                    // для тестів: тестовий сайт замість справжнього
 
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Ui.BG);
         int p = Ui.dp(this, 8); root.setPadding(p, p, p, 0);
@@ -49,6 +50,7 @@ public class MainActivity extends Activity {
     }
 
     String site(boolean map) {
+        if (testSite != null) return map ? testSite + "map" : testSite;
         Data d = Data.cached(this);
         if (map) return d != null ? d.map : Data.DEFAULT_MAP;
         return d != null ? d.site : Data.DEFAULT_SITE;
