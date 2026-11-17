@@ -37,7 +37,7 @@ public class PreviewActivity extends Activity {
         java.util.List<Data.Q> all = new java.util.ArrayList<>();
         java.util.List<String> s = Prefs.selected(this, ID);
         if (d != null) for (Data.Q q : d.qs) if (s == null || s.contains(q.name)) all.add(q);
-        CardsWidget.Plan p = d == null ? new CardsWidget.Plan() : CardsWidget.plan(this, d, ID, all, h);
-        Log.i("SvitloPreview", "cards " + all.size() + " shown " + p.rows.size() + " hidden " + p.hidden + " expanded " + p.open + " tomorrow " + p.open2);
+        CardsWidget.Plan p = d == null ? new CardsWidget.Plan() : CardsWidget.planFor(this, d, ID, all, h);
+        Log.i("SvitloPreview", "mode " + (CardsWidget.listMode() ? "list" : "fit") + " cards " + all.size() + " shown " + p.rows.size() + " hidden " + p.hidden + " expanded " + p.open + " tomorrow " + p.open2);
     }
 }

@@ -149,59 +149,103 @@ public class CardsWidget extends AppWidgetProvider {
     }
 
     /**
-     * hDp > 0 — висота задана (перегляд у застосунку). Інакше — з робочого стола: на Android 12+ робочий стіл
-     * повідомляє точні розміри віджета (вертикально й горизонтально) — готуємо вигляд для кожного, і він сам бере потрібний.
+     * Android 12+: картки — у списку, що сам гортається (нічого не ховається і не згортається саме, розкривати можна скільки завгодно).
+     * Список передається разом із віджетом (RemoteCollectionItems) — без окремої служби, тож смужки завжди від своєї черги.
+     * Старіші Android: картки одним блоком — стільки, скільки влазить (hDp > 0 — висота задана, для перегляду в застосунку).
      */
     static RemoteViews build(Context c, int id, boolean loading, int hDp) {
+        if (Build.VERSION.SDK_INT >= 31) return buildList(c, id, loading, hDp > 0 ? 0 : widthDp(c, id));
         if (hDp > 0) return buildFor(c, id, loading, hDp, 0);
-        if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                Bundle o = AppWidgetManager.getInstance(c).getAppWidgetOptions(id);
-                java.util.ArrayList<android.util.SizeF> sizes = o == null ? null : o.<android.util.SizeF>getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
-                if (sizes != null && !sizes.isEmpty()) {
-                    java.util.Map<android.util.SizeF, RemoteViews> m = new java.util.HashMap<>();
-                    for (android.util.SizeF s : sizes) if (m.size() < 16 && !m.containsKey(s)) m.put(s, buildFor(c, id, loading, Math.round(s.getHeight()), Math.round(s.getWidth())));
-                    return new RemoteViews(m);
-                }
-            } catch (Exception ignored) { }
-        }
         return buildFor(c, id, loading, heightDp(c, id), widthDp(c, id));
     }
 
-    /** wDp — ширина віджета (0 — на всю ширину екрана, для перегляду в застосунку). */
-    static RemoteViews buildFor(Context c, int id, boolean loading, int hDp, int wDp) {
-        RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget);
-        Data d = Data.cached(c);
+    static List<Data.Q> chosen(Context c, Data d, int id) {
+        List<Data.Q> all = new ArrayList<>();
+        if (d != null) { List<String> sel = Prefs.selected(c, id); for (Data.Q q : d.qs) if (sel == null || sel.contains(q.name)) all.add(q); }
+        return all;
+    }
+
+    /** Для списку: усі вибрані черги; розкриті — як натиснули; «завтра» — для кожної розкритої, якщо графік є. */
+    static Plan listPlan(Context c, Data d, int id, List<Data.Q> all) {
+        Plan p = new Plan();
+        p.rows.addAll(all);
+        List<String> ex = Prefs.expanded(c, id);
+        int sh = d.dayShift(System.currentTimeMillis());
+        for (int i = ex.size() - 1; i >= 0; i--) for (Data.Q q : all) if (q.name.equals(ex.get(i))) {
+            p.open.add(q.name);
+            if (sh <= 0 && q.tomorrow != null) p.open2.add(q.name);
+        }
+        return p;
+    }
+    static boolean listMode() { return Build.VERSION.SDK_INT >= 31; }
+    static Plan planFor(Context c, Data d, int id, List<Data.Q> all, int hDp) { return listMode() ? listPlan(c, d, id, all) : plan(c, d, id, all, hDp); }
+
+    /** Заголовок (оновлено…, ↻, ⚙, назва → застосунок) і напис, коли карток немає. */
+    static void header(Context c, RemoteViews rv, int id, boolean loading, Data d, boolean none) {
         String err = Data.prefs(c).getString("error", null);
         String up;
         if (loading) up = "оновлюю…";
         else if (d == null) up = err != null ? "немає зв'язку" : "завантаження…";
         else up = (err != null ? "⚠ дані на " : "оновлено ") + d.hm(d.now);
         rv.setTextViewText(R.id.updated, up);
-
-        rv.removeAllViews(R.id.cards);
-        List<Data.Q> all = new ArrayList<>();
-        if (d != null) { List<String> sel = Prefs.selected(c, id); for (Data.Q q : d.qs) if (sel == null || sel.contains(q.name)) all.add(q); }
-        Plan p = d == null ? new Plan() : plan(c, d, id, all, hDp);
-        long now = System.currentTimeMillis();
-        android.util.DisplayMetrics dm = c.getResources().getDisplayMetrics();
-        if (wDp <= 0) wDp = Math.round(dm.widthPixels / dm.density) - 24;
-        float barW = wDp - 12 - 20;                                  // поля віджета і картки
-        for (int i = 0; i < p.rows.size(); i++) rv.addView(R.id.cards, card(c, d, id, i, p.rows.get(i), p.open.contains(p.rows.get(i).name), p.open2.contains(p.rows.get(i).name), now, barW, dm.density));
-        rv.setViewVisibility(R.id.empty, p.rows.isEmpty() ? View.VISIBLE : View.GONE);
+        rv.setViewVisibility(R.id.empty, none ? View.VISIBLE : View.GONE);
         rv.setTextViewText(R.id.empty, d == null ? (err != null ? "Немає зв'язку з сервером.\nНатисніть ↻, щоб спробувати ще раз." : "Завантаження…") : "Немає вибраних черг — натисніть ⚙");
-        rv.setViewVisibility(R.id.overflow, p.hidden > 0 ? View.VISIBLE : View.GONE);
-        rv.setTextViewText(R.id.overflow, "ще " + p.hidden + " " + (p.hidden == 1 ? "черга" : p.hidden < 5 ? "черги" : "черг") + " — збільште віджет або виберіть менше (⚙)");
-
         Intent r = new Intent(c, CardsWidget.class).setAction(A_REFRESH).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id);
         rv.setOnClickPendingIntent(R.id.refresh, PendingIntent.getBroadcast(c, id * 10 + 2, r, PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
         Intent s = new Intent(c, ConfigActivity.class).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id).setData(Uri.parse("svitlo://cfg/" + id));
         rv.setOnClickPendingIntent(R.id.settings, PendingIntent.getActivity(c, id * 10 + 3, s, PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
         rv.setOnClickPendingIntent(R.id.title, PendingIntent.getActivity(c, id * 10 + 4, new Intent(c, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
+    }
+
+    static float barWidth(Context c, int wDp) {
+        android.util.DisplayMetrics dm = c.getResources().getDisplayMetrics();
+        if (wDp <= 0) wDp = Math.round(dm.widthPixels / dm.density) - 24;
+        return wDp - 12 - 20;                                       // поля віджета і картки
+    }
+
+    @android.annotation.TargetApi(31)
+    static RemoteViews buildList(Context c, int id, boolean loading, int wDp) {
+        RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget);
+        Data d = Data.cached(c);
+        List<Data.Q> all = chosen(c, d, id);
+        header(c, rv, id, loading, d, all.isEmpty());
+        rv.setViewVisibility(R.id.cards, View.GONE);
+        rv.setViewVisibility(R.id.overflow, View.GONE);
+        rv.setViewVisibility(R.id.list, all.isEmpty() ? View.GONE : View.VISIBLE);
+        if (d != null && !all.isEmpty()) {
+            Plan p = listPlan(c, d, id, all);
+            long now = System.currentTimeMillis();
+            float barW = barWidth(c, wDp), dens = c.getResources().getDisplayMetrics().density;
+            RemoteViews.RemoteCollectionItems.Builder b = new RemoteViews.RemoteCollectionItems.Builder().setHasStableIds(true).setViewTypeCount(1);
+            for (int i = 0; i < p.rows.size(); i++) {
+                Data.Q q = p.rows.get(i);
+                b.addItem(q.name.hashCode(), card(c, d, id, i, q, p.open.contains(q.name), p.open2.contains(q.name), now, barW, dens, true));
+            }
+            rv.setRemoteAdapter(R.id.list, b.build());
+            Intent t = new Intent(c, CardsWidget.class).setAction(A_TOGGLE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id).setData(Uri.parse("svitlo://list/" + id));
+            rv.setPendingIntentTemplate(R.id.list, PendingIntent.getBroadcast(c, id * 10 + 7, t, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE));
+        }
         return rv;
     }
 
-    static RemoteViews card(Context c, Data d, int id, int pos, Data.Q q, boolean ex, boolean ex2, long now, float barW, float dens) {
+    /** wDp — ширина віджета (0 — на всю ширину екрана, для перегляду в застосунку). */
+    static RemoteViews buildFor(Context c, int id, boolean loading, int hDp, int wDp) {
+        RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget);
+        Data d = Data.cached(c);
+        rv.removeAllViews(R.id.cards);
+        List<Data.Q> all = chosen(c, d, id);
+        Plan p = d == null ? new Plan() : plan(c, d, id, all, hDp);
+        header(c, rv, id, loading, d, p.rows.isEmpty());
+        long now = System.currentTimeMillis();
+        float barW = barWidth(c, wDp), dens = c.getResources().getDisplayMetrics().density;
+        for (int i = 0; i < p.rows.size(); i++) rv.addView(R.id.cards, card(c, d, id, i, p.rows.get(i), p.open.contains(p.rows.get(i).name), p.open2.contains(p.rows.get(i).name), now, barW, dens, false));
+        rv.setViewVisibility(R.id.overflow, p.hidden > 0 ? View.VISIBLE : View.GONE);
+        rv.setTextViewText(R.id.overflow, "ще " + p.hidden + " " + (p.hidden == 1 ? "черга" : p.hidden < 5 ? "черги" : "черг") + " — збільште віджет або виберіть менше (⚙)");
+        return rv;
+    }
+
+    /** inList — картка в списку (Android 12+): натискання — через спільний шаблон списку. */
+    static RemoteViews card(Context c, Data d, int id, int pos, Data.Q q, boolean ex, boolean ex2, long now, float barW, float dens, boolean inList) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.item);
         v.setTextViewText(R.id.name, "Черга " + q.name);
         v.setTextViewText(R.id.status, q.state > 0 ? "Світло є" : q.state == 0 ? "Світла немає" : "Немає даних");
@@ -222,6 +266,7 @@ public class CardsWidget extends AppWidgetProvider {
             v.setViewVisibility(R.id.b2, hasB ? View.VISIBLE : View.GONE);
             if (hasB) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(b)); v.setImageViewBitmap(R.id.b2, Bars.draw(b, -1, barW, dens)); }
         }
+        if (inList) { v.setOnClickFillInIntent(R.id.card, new Intent().putExtra(EXTRA_Q, q.name)); return v; }
         Intent t = new Intent(c, CardsWidget.class).setAction(A_TOGGLE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id).putExtra(EXTRA_Q, q.name)
             .setData(Uri.parse("svitlo://toggle/" + id + "/" + Uri.encode(q.name)));
         v.setOnClickPendingIntent(R.id.card, PendingIntent.getBroadcast(c, (id * 31 + pos) & 0x7fffffff, t, PendingIntent.FLAG_UPDATE_CURRENT | immutable()));

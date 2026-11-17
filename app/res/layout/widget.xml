@@ -23,6 +23,9 @@
 
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="2dp">
         <LinearLayout android:id="@+id/cards" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+        <ListView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone"
+            android:divider="@null" android:dividerHeight="0dp" android:listSelector="@android:color/transparent" android:scrollbarSize="3dp"
+            android:fadeScrollbars="true" android:overScrollMode="never" />
         <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center"
             android:text="Завантаження…" android:textColor="#FF8B9BB4" android:textSize="14sp" android:visibility="gone" />
     </FrameLayout>
