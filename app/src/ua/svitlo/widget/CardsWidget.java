@@ -89,13 +89,18 @@ public class CardsWidget extends AppWidgetProvider {
     }
 
     // ---------- скільки місця: висота віджета в dp (з налаштувань робочого стола) ----------
-    static int heightDp(Context c, int id) {
+    static int heightDp(Context c, int id) { return opt(c, id, false, 260); }
+    static int widthDp(Context c, int id) { return opt(c, id, true, 320); }
+    /** Розмір із налаштувань робочого стола: вертикально — ширина MIN, висота MAX; горизонтально — навпаки. */
+    static int opt(Context c, int id, boolean width, int def) {
         try {
             Bundle o = AppWidgetManager.getInstance(c).getAppWidgetOptions(id);
             boolean land = c.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
-            int h = o == null ? 0 : o.getInt(land ? AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT : AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-            return h > 0 ? h : 260;
-        } catch (Exception e) { return 260; }
+            String k = width ? (land ? AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH : AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+                             : (land ? AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT : AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+            int v = o == null ? 0 : o.getInt(k);
+            return v > 0 ? v : def;
+        } catch (Exception e) { return def; }
     }
 
     /**
@@ -133,8 +138,8 @@ public class CardsWidget extends AppWidgetProvider {
         return p;
     }
     static float cost(Plan p, int total, float fs) {
-        // картка: відступи 11 + рядок ~22·шрифт; день графіка: відступи 4 + рядок ~19·шрифт + смужка 8; «ще N»: 2 + ~16·шрифт
-        return p.rows.size() * (11 + 22 * fs) + (p.open.size() + p.open2.size()) * (12 + 19 * fs) + (p.rows.size() < total ? 2 + 16 * fs : 0);
+        // картка: відступи 11 + рядок ~22·шрифт; день графіка: відступи 4 + рядок ~19·шрифт + смужка з годинами 18; «ще N»: 2 + ~16·шрифт
+        return p.rows.size() * (11 + 22 * fs) + (p.open.size() + p.open2.size()) * (4 + Bars.H_DP + 19 * fs) + (p.rows.size() < total ? 2 + 16 * fs : 0);
     }
     /** Сховати нижню картку (спершу — нерозкриту). false — ховати нічого. */
     static boolean hideOne(Plan p, boolean keepOpen) {
@@ -148,22 +153,23 @@ public class CardsWidget extends AppWidgetProvider {
      * повідомляє точні розміри віджета (вертикально й горизонтально) — готуємо вигляд для кожного, і він сам бере потрібний.
      */
     static RemoteViews build(Context c, int id, boolean loading, int hDp) {
-        if (hDp > 0) return buildFor(c, id, loading, hDp);
+        if (hDp > 0) return buildFor(c, id, loading, hDp, 0);
         if (Build.VERSION.SDK_INT >= 31) {
             try {
                 Bundle o = AppWidgetManager.getInstance(c).getAppWidgetOptions(id);
                 java.util.ArrayList<android.util.SizeF> sizes = o == null ? null : o.<android.util.SizeF>getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
                 if (sizes != null && !sizes.isEmpty()) {
                     java.util.Map<android.util.SizeF, RemoteViews> m = new java.util.HashMap<>();
-                    for (android.util.SizeF s : sizes) if (m.size() < 16 && !m.containsKey(s)) m.put(s, buildFor(c, id, loading, Math.round(s.getHeight())));
+                    for (android.util.SizeF s : sizes) if (m.size() < 16 && !m.containsKey(s)) m.put(s, buildFor(c, id, loading, Math.round(s.getHeight()), Math.round(s.getWidth())));
                     return new RemoteViews(m);
                 }
             } catch (Exception ignored) { }
         }
-        return buildFor(c, id, loading, heightDp(c, id));
+        return buildFor(c, id, loading, heightDp(c, id), widthDp(c, id));
     }
 
-    static RemoteViews buildFor(Context c, int id, boolean loading, int hDp) {
+    /** wDp — ширина віджета (0 — на всю ширину екрана, для перегляду в застосунку). */
+    static RemoteViews buildFor(Context c, int id, boolean loading, int hDp, int wDp) {
         RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget);
         Data d = Data.cached(c);
         String err = Data.prefs(c).getString("error", null);
@@ -178,7 +184,10 @@ public class CardsWidget extends AppWidgetProvider {
         if (d != null) { List<String> sel = Prefs.selected(c, id); for (Data.Q q : d.qs) if (sel == null || sel.contains(q.name)) all.add(q); }
         Plan p = d == null ? new Plan() : plan(c, d, id, all, hDp);
         long now = System.currentTimeMillis();
-        for (int i = 0; i < p.rows.size(); i++) rv.addView(R.id.cards, card(c, d, id, i, p.rows.get(i), p.open.contains(p.rows.get(i).name), p.open2.contains(p.rows.get(i).name), now));
+        android.util.DisplayMetrics dm = c.getResources().getDisplayMetrics();
+        if (wDp <= 0) wDp = Math.round(dm.widthPixels / dm.density) - 24;
+        float barW = wDp - 12 - 20;                                  // поля віджета і картки
+        for (int i = 0; i < p.rows.size(); i++) rv.addView(R.id.cards, card(c, d, id, i, p.rows.get(i), p.open.contains(p.rows.get(i).name), p.open2.contains(p.rows.get(i).name), now, barW, dm.density));
         rv.setViewVisibility(R.id.empty, p.rows.isEmpty() ? View.VISIBLE : View.GONE);
         rv.setTextViewText(R.id.empty, d == null ? (err != null ? "Немає зв'язку з сервером.\nНатисніть ↻, щоб спробувати ще раз." : "Завантаження…") : "Немає вибраних черг — натисніть ⚙");
         rv.setViewVisibility(R.id.overflow, p.hidden > 0 ? View.VISIBLE : View.GONE);
@@ -192,7 +201,7 @@ public class CardsWidget extends AppWidgetProvider {
         return rv;
     }
 
-    static RemoteViews card(Context c, Data d, int id, int pos, Data.Q q, boolean ex, boolean ex2, long now) {
+    static RemoteViews card(Context c, Data d, int id, int pos, Data.Q q, boolean ex, boolean ex2, long now, float barW, float dens) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.item);
         v.setTextViewText(R.id.name, "Черга " + q.name);
         v.setTextViewText(R.id.status, q.state > 0 ? "Світло є" : q.state == 0 ? "Світла немає" : "Немає даних");
@@ -207,11 +216,11 @@ public class CardsWidget extends AppWidgetProvider {
             int[][] a = sh <= 0 ? q.today : sh == 1 ? q.tomorrow : null, b = sh <= 0 ? q.tomorrow : null;
             v.setTextViewText(R.id.t1, "Сьогодні: " + Data.list(a));
             v.setViewVisibility(R.id.b1, a == null ? View.GONE : View.VISIBLE);
-            if (a != null) v.setImageViewBitmap(R.id.b1, Bars.draw(a, d.kyivMin(now)));
+            if (a != null) v.setImageViewBitmap(R.id.b1, Bars.draw(a, d.kyivMin(now), barW, dens));
             boolean hasB = ex2 && b != null;
             v.setViewVisibility(R.id.t2, hasB ? View.VISIBLE : View.GONE);
             v.setViewVisibility(R.id.b2, hasB ? View.VISIBLE : View.GONE);
-            if (hasB) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(b)); v.setImageViewBitmap(R.id.b2, Bars.draw(b, -1)); }
+            if (hasB) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(b)); v.setImageViewBitmap(R.id.b2, Bars.draw(b, -1, barW, dens)); }
         }
         Intent t = new Intent(c, CardsWidget.class).setAction(A_TOGGLE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id).putExtra(EXTRA_Q, q.name)
             .setData(Uri.parse("svitlo://toggle/" + id + "/" + Uri.encode(q.name)));
