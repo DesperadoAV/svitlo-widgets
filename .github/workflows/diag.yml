@@ -1,0 +1,18 @@
+name: Стан бота для мешканців (діагностика)
+
+# Лише читає головну сторінку бота (стан даних і останні помилки Telegram) — нічого не змінює.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Адреса бота'
+        default: 'https://svitlo-public.desperadoav.workers.dev'
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Головна сторінка бота
+        run: |
+          curl -sS --max-time 30 "${{ inputs.url }}/" | tee page.txt
+          { echo '```'; cat page.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

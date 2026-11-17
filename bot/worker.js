@@ -105,15 +105,37 @@ function statusJson(S) {
 
 // ------------------------- Telegram -------------------------
 async function tg(env, method, body) {
+  let j;
   try {
     const r = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-    return await r.json();
-  } catch (e) { return { ok: false, description: String(e && e.message || e) }; }
+    j = await r.json();
+  } catch (e) { j = { ok: false, description: String(e && e.message || e) }; }
+  if (!j.ok && !/not modified/i.test(String(j.description || ""))) await logErr(env, method, j).catch(() => {});
+  return j;
+}
+// Останні 10 помилок Telegram — видно на головній сторінці бота (без токенів і тексту повідомлень)
+async function logErr(env, method, j) {
+  let l = []; try { l = JSON.parse(await kvGet(env, "pub:tgerr") || "[]"); } catch (e) {}
+  l.push({ at: Date.now(), m: method, c: j.error_code || 0, d: String(j.description || "").slice(0, 300) });
+  await kvSet(env, "pub:tgerr", JSON.stringify(l.slice(-10)));
+}
+// Стан черг звичайним текстом — коли картка (віджет) не показується, і для довідки
+const dur = ms => { const m = Math.max(0, Math.floor(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return d ? `${d} д ${h} год` : h ? `${h} год ${m % 60} хв` : `${m % 60} хв`; };
+function statusText(S) {
+  const ivs = l => l === null ? "графіка ще немає" : l.length ? l.map(([a, b]) => hm(a) + "–" + hm(b)).join(", ") : "відключень немає";
+  const rows = S.queues.map(q => {
+    const icon = q.state === 1 ? "🟢" : q.state === 0 ? "🔴" : "⚪️";
+    const st = q.state === 1 ? "світло є" : q.state === 0 ? "світла немає" : "немає даних";
+    const since = q.state >= 0 && q.since ? ` з ${fmtTime(q.since)}${fmtDate(q.since) !== S.d0 ? " " + fmtDate(q.since).slice(0, 5) : ""} (${dur(S.now - q.since)})` : "";
+    return `${icon} <b>Черга ${q.name}</b> — ${st}${since}\n      сьогодні: ${ivs(q.today)}` + (q.tomorrow ? `\n      завтра: ${ivs(q.tomorrow)}` : "");
+  });
+  return `💡 <b>Світло В Славутичі</b> · дані на ${fmtTime(S.now)}\n\n${rows.join("\n")}`;
 }
 async function secret(env) {                            // секрет вебхука — з токена, щоб нічого окремо не налаштовувати
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("svitlo-pub:" + env.BOT_TOKEN));
   return [...new Uint8Array(h)].slice(0, 16).map(b => b.toString(16).padStart(2, "0")).join("");
 }
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const keyboard = S => ({ inline_keyboard: [[{ text: "🗺 Мапа черг", url: S.map }, { text: "🌐 Сайт", url: S.site }]] });
 
 // Список спільних віджетів: [{id, ver}] — оновлюємо всі (старі версії теж, щоб у людей не «застигали» картки)
@@ -132,7 +154,8 @@ async function sendCard(env, chat) {
     await tg(env, "unpinAllChatMessages", { chat_id: chat });
     await tg(env, "pinChatMessage", { chat_id: chat, message_id: r.result.message_id, disable_notification: true });
   } else if (r && !r.ok) {
-    await tg(env, "sendMessage", { chat_id: chat, text: "Не вдалося показати картку 😕 Оновіть Telegram до останньої версії і напишіть /start ще раз.\nА поки — стан черг на сайті:", reply_markup: keyboard(S) });
+    await tg(env, "sendMessage", { chat_id: chat, parse_mode: "HTML", disable_web_page_preview: true, reply_markup: keyboard(S),
+      text: statusText(S) + `\n\n<i>Живу картку показати не вдалося (${esc(String(r.description || "").slice(0, 120))}). Напишіть /start пізніше — спробую ще раз.</i>` });
   }
   return r;
 }
@@ -209,7 +232,9 @@ export default {
       await init(env);
       let sn = null; try { sn = JSON.parse(await kvGet(env, "pub:snap") || "null"); } catch (e) {}
       const st = !sn ? "даних ще не було (вони з'являться після першого звернення)" : (sn.S ? `дані від ${fmtTime(sn.S.now)}, ${fmtDate(sn.S.now)}` : "даних немає") + (sn.err && sn.err.at > (sn.at || 0) ? `\n⚠️ Останнє звернення до основного бота (${fmtTime(sn.err.at)}): ${sn.err.msg}` : "");
-      return new Response(`💡 Світло В Славутичі — бот для мешканців працює.\nДжерело: ${MAIN(env)}/api/status — ${st}\nДані для віджета: /status.json\nНалаштування бота: /setup`, { headers: { "content-type": "text/plain; charset=utf-8" } });
+      let errs = []; try { errs = JSON.parse(await kvGet(env, "pub:tgerr") || "[]"); } catch (e) {}
+      const el = errs.length ? "\n\nОстанні помилки Telegram:\n" + errs.slice().reverse().map(e => `${fmtDate(e.at)} ${fmtTime(e.at)}  ${e.m}: ${e.c} ${e.d}`).join("\n") : "";
+      return new Response(`💡 Світло В Славутичі — бот для мешканців працює.\nДжерело: ${MAIN(env)}/api/status — ${st}\nДані для віджета: /status.json\nНалаштування бота: /setup${el}`, { headers: { "content-type": "text/plain; charset=utf-8" } });
     } catch (e) {
       return new Response("Помилка: " + (e && e.message || e), { status: 500 });
     }

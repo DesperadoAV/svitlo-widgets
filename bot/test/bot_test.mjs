@@ -17,7 +17,7 @@ const FAKE = { v:1, now:NOW, today:"17.11.2026", tomorrow:"18.11.2026", kyiv_off
     {name:"3.2",state:"on",since:NOW-7200000,today:[["08:00","12:00"],["11:00","14:00"],["20:00","24:00"]],tomorrow:[["00:00","04:00"]]},
     {name:"4.1",state:"on",since:NOW-600000,today:null,tomorrow:null},
     {name:"6.1",state:"off",since:NOW-3*3600000,today:[["12:00","18:00"]],tomorrow:null}]};
-let MAIN_DOWN=false, MAIN_HITS=0, MAIN_FN=null;
+let MAIN_DOWN=false, MAIN_HITS=0, MAIN_FN=null, WIDGET_FAIL=null;
 const log=[]; let wid=0;
 globalThis.fetch=async(u,o={})=>{ u=String(u); let b={}; try{b=JSON.parse(o.body)}catch(e){}
   if(u.startsWith("https://svitlo-main.test/")){ MAIN_HITS++;
@@ -27,7 +27,7 @@ globalThis.fetch=async(u,o={})=>{ u=String(u); let b={}; try{b=JSON.parse(o.body
     return new Response(JSON.stringify({...FAKE,now:NOW}),{headers:{"content-type":"application/json"}}); }
   if(u.includes("api.telegram.org/botPUB")){ const m=u.split("/").pop(); log.push({m,b});
     if(m==="getMe") return {json:async()=>({ok:true,result:{username:"svitlo_slav_bot"}})};
-    if(m==="sendWidget") return {json:async()=>({ok:true,result:{message_id:100+log.length,widget:{id:"W"+(++wid)}}})};
+    if(m==="sendWidget") return {json:async()=>(WIDGET_FAIL?{ok:false,error_code:400,description:WIDGET_FAIL}:{ok:true,result:{message_id:100+log.length,widget:{id:"W"+(++wid)}}})};
     if(m==="sendSharedWidget") return {json:async()=>(b.widget_id==="Wgone"?{ok:false,description:"Bad Request: widget not found"}:{ok:true,result:{message_id:100+log.length}})};
     return {json:async()=>({ok:true,result:true})}; }
   throw new Error("тест не має ходити в інтернет: "+u); };
@@ -93,6 +93,12 @@ MAIN_FN=null;
 // віджет зник (наприклад, видалили) — створюється новий
 sqlite.prepare("UPDATE kv SET v=? WHERE k='pub:widgets'").run(JSON.stringify([{id:"Wgone",ver:1}]));
 L=await tgp(888,"/start"); chk("спільний віджет не знайдено — бот створює новий", L.some(x=>x.m==="sendWidget") && JSON.parse(sqlite.prepare("SELECT v FROM kv WHERE k='pub:widgets'").get().v).some(w=>w.id==="W2"));
+// Telegram відмовив у картці — стан черг текстом, причина записана
+WIDGET_FAIL="Bad Request: WIDGET_TEST_FAIL"; sqlite.prepare("DELETE FROM kv WHERE k='pub:widgets'").run();
+L=await tgp(4242,"/start"); const fb=L.find(x=>x.m==="sendMessage");
+chk("картку не прийнято — стан черг звичайним повідомленням із причиною", fb && fb.b.parse_mode==="HTML" && fb.b.text.includes("Черга 3.2") && fb.b.text.includes("WIDGET_TEST_FAIL") && fb.b.reply_markup, fb && fb.b.text.replace(/\n/g," | "));
+t=await (await B("/")).text(); chk("…причина видна на головній сторінці бота", t.includes("sendWidget: 400 Bad Request: WIDGET_TEST_FAIL"), t.split("\n").slice(-3).join(" | "));
+WIDGET_FAIL=null; L=await tgp(4242,"/start"); chk("…Telegram знову приймає — картка створюється", L.some(x=>x.m==="sendWidget") && !L.some(x=>x.m==="sendMessage"));
 // розмір даних: багато інтервалів
 const many=[]; for(let h=0;h<24;h+=2) many.push([`${String(h).padStart(2,"0")}:00`,`${String(h).padStart(2,"0")}:30`]);
 for (const q of FAKE.queues) { q.today=many; q.tomorrow=many; }
