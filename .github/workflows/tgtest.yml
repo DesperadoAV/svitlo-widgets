@@ -1,0 +1,45 @@
+name: Тимчасово — які картки Telegram приймає
+
+# Разова перевірка: надсилає кілька пробних карток (віджетів) у чат власника з ботом і показує відповіді Telegram.
+on:
+  workflow_dispatch:
+    inputs:
+      chat: { description: 'ID чату', default: '242115653' }
+
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: '24' }
+      - name: Пробні картки
+        env:
+          BT: ${{ secrets.BOT_TOKEN }}
+          CHAT: ${{ inputs.chat }}
+        run: |
+          cat > t.mjs <<'JS'
+          const { WIDGET_HTML } = await import(process.cwd() + "/bot/widget.js");
+          const T = process.env.BT, chat = +process.env.CHAT;
+          const call = async (m, b) => { const r = await fetch(`https://api.telegram.org/bot${T}/${m}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }); return r.json(); };
+          const pd = JSON.stringify({ t: Math.floor(Date.now() / 60000), o: 120, q: [["3.2", 1, Math.floor(Date.now() / 60000) - 90, "780-1020,1230-1440", null]] });
+          const small = "<b>Пробна картка</b><p>Це перевірка — можна видалити.</p>";
+          const tests = [
+            ["A: мала, звичайна", { html: small, caption: "🧪 A: мала картка" }],
+            ["B: мала, спільна (is_shared)", { html: small, is_shared: true, caption: "🧪 B: мала спільна" }],
+            ["C: наша, звичайна + public_data", { html: WIDGET_HTML, public_data: pd, caption: "🧪 C: наша картка" }],
+            ["D: наша, chat_data", { html: WIDGET_HTML, chat_data: pd, caption: "🧪 D: наша картка (chat_data)" }],
+            ["E: наша, спільна", { html: WIDGET_HTML, public_data: pd, is_shared: true, caption: "🧪 E: наша спільна" }],
+          ];
+          for (const [name, body] of tests) {
+            const r = await call("sendWidget", { chat_id: chat, ...body });
+            const w = r.result && r.result.widget;
+            console.log(name, "→", r.ok ? "✅ ok" : "❌ " + r.error_code + " " + r.description, w ? "widget: " + JSON.stringify({ id: w.id, keys: Object.keys(w) }) : "");
+            if (r.ok && name.startsWith("C")) {
+              const e = await call("editMessageWidgetData", { chat_id: chat, message_id: r.result.message_id, public_data: pd });
+              console.log("   editMessageWidgetData(public_data) →", e.ok ? "✅" : "❌ " + e.description);
+            }
+          }
+          const me = await call("getMe", {}); console.log("bot:", me.result && me.result.username, "can_join_groups:", me.result && me.result.can_join_groups);
+          JS
+          node t.mjs
