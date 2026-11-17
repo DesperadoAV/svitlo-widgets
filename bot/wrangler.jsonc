@@ -1,5 +1,5 @@
 // Cloudflare: бот для мешканців «Світло В Славутичі» (svitlo-public).
-// Workers Builds: Root directory = bot, Deploy command = npx wrangler deploy
+// Викладає GitHub Actions (.github/workflows/bot.yml): сам створює базу svitlo-public і підставляє її ID замість AUTO.
 {
   "name": "svitlo-public",
   "main": "worker.js",
@@ -7,11 +7,13 @@
   "workers_dev": true,
   "preview_urls": false,
   "keep_vars": true,
-  // раз на хвилину: оновлює спільну картку в Telegram, якщо щось змінилося
+  // раз на хвилину: бере стан черг в основного бота і оновлює спільну картку в Telegram, якщо щось змінилося
   "triggers": { "crons": ["* * * * *"] },
-  // та сама база, що й в основного бота svitlo51 (лише читає черги й графіки)
+  // своя база бота (хто писав боту, ID картки, останній знімок даних). До бази основного бота доступу немає.
   "d1_databases": [
-    { "binding": "DB", "database_name": "svitlo", "database_id": "e600002a-ab0a-41f9-996e-5e39f63f7fa5" }
+    { "binding": "DB", "database_name": "svitlo-public", "database_id": "AUTO" }
   ],
+  // звідки брати дані (основний бот, версія 4.0.5+)
+  "vars": { "MAIN_URL": "https://svitlo51.a-m-vasylets.workers.dev" },
   "observability": { "enabled": true }
 }

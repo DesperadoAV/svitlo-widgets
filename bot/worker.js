@@ -6,15 +6,15 @@
 //    Картка одна на всіх (спільний віджет): бот оновлює її раз — і вона змінюється в усіх чатах.
 //  • /status.json — ті самі дані для віджета на робочий стіл Android (застосунок «Світло В Славутичі»).
 //
-// Дані бере з тієї самої бази D1, що й основний бот (svitlo51): таблиці queues і schedule — лише читає.
-// Свої записи тримає в таблиці kv (ключі pub:*) і pub_users.
-// Секрет у Cloudflare: BOT_TOKEN (токен бота від @BotFather). Необов'язково: SITE_URL.
+// Дані бере в основного бота (svitlo51, адреса /api/status — з версії 4.0.5): раз на хвилину, а не на кожен запит,
+// тож скільки б людей не користувалося ботом і віджетом, основний бот отримує ≈1440 запитів на добу.
+// Має свою базу D1 (svitlo-public): таблиці kv (pub:*) і pub_users. До бази основного бота доступу не має.
+// Секрет у Cloudflare: BOT_TOKEN (токен бота від @BotFather). Необов'язково: MAIN_URL, SITE_URL.
 // =============================================================================
 import { WIDGET_HTML, WIDGET_VER } from "./widget.js";
 
-const SITE = env => String(env.SITE_URL || "https://svitlo51.a-m-vasylets.workers.dev/");
+const MAIN = env => String(env.MAIN_URL || "https://svitlo51.a-m-vasylets.workers.dev").replace(/\/+$/, "");
 const MAP_DEFAULT = "https://desperadoav.github.io/Svitlo_in_Slavutych/";
-const DEVS = ["esp1", "esp2", "esp3", "esp4", "esp5", "esp6", "router"];
 const CAPTION = "💡 Світло В Славутичі — стан черг наживо. Натисніть на чергу, щоб побачити графік; «⚙️» — вибрати свої черги.";
 
 // ------------------------- час (Київ) -------------------------
@@ -47,27 +47,44 @@ async function init(env) {
 async function kvGet(env, k) { const r = await env.DB.prepare("SELECT v FROM kv WHERE k=?").bind(k).first(); return r ? r.v : null; }
 async function kvSet(env, k, v) { await env.DB.prepare("INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").bind(k, String(v)).run(); }
 
-// Знімок стану всіх черг — те саме, що показує сайт
+// Знімок стану всіх черг — те саме, що показує сайт. Береться в основного бота й зберігається у своїй базі:
+// свіжий (до 90 с) — з бази; старіший — новий запит до основного бота; той недоступний — останній збережений.
 let SNAP = null, SNAP_TS = 0;
-async function snapshot(env) {
-  if (SNAP && Date.now() - SNAP_TS < 30000) return SNAP;
-  await init(env);
-  const now = Date.now(), d0 = fmtDate(now), d1 = nextDayOf(now);
-  const qs = (await env.DB.prepare("SELECT * FROM queues ORDER BY name").all()).results;
-  const rows = (await env.DB.prepare("SELECT queue,day,start,end FROM schedule WHERE day IN (?,?)").bind(d0, d1).all()).results;
-  const mapRow = await env.DB.prepare("SELECT v FROM kv WHERE k='set:map_url'").first().catch(() => null);
-  SNAP = {
-    now, d0, d1, off: kyivOffMin(now), map: (mapRow && mapRow.v) || MAP_DEFAULT, site: SITE(env),
-    queues: qs.map(q => {
-      const last = Math.max(0, ...DEVS.map(d => +q["last_" + d] || 0)), live = !q.paused && last > 0 && now - last < 86400000;
-      const of = d => rows.filter(r => r.queue === q.name && r.day === d).map(r => [r.start, r.end]);
-      return { name: q.name, state: live ? (q.state !== "Offline" ? 1 : 0) : -1, since: +q.state_ts || 0,
-        today: rows.some(r => r.queue === q.name && r.day === d0) ? merge(of(d0)) : null,
-        tomorrow: rows.some(r => r.queue === q.name && r.day === d1) ? merge(of(d1)) : null };
-    }),
+function fromMain(env, j) {
+  if (!j || j.v !== 1 || !Array.isArray(j.queues) || !j.now) throw new Error("основний бот надіслав незрозумілі дані");
+  const st = x => x === "on" ? 1 : x === "off" ? 0 : -1, ok = l => Array.isArray(l) ? merge(l.filter(x => Array.isArray(x) && x.length === 2)) : null;
+  return {
+    now: +j.now, d0: String(j.today || fmtDate(j.now)), d1: String(j.tomorrow || nextDayOf(j.now)), off: Number.isFinite(+j.kyiv_offset_min) ? +j.kyiv_offset_min : kyivOffMin(j.now),
+    map: j.map || MAP_DEFAULT, site: String(env.SITE_URL || j.site || MAIN(env) + "/"),
+    queues: j.queues.filter(q => q && q.name).map(q => ({ name: String(q.name), state: st(q.state), since: +q.since || 0, today: ok(q.today), tomorrow: ok(q.tomorrow) })),
   };
-  SNAP_TS = now;
-  return SNAP;
+}
+async function pull(env) {                              // запит до основного бота (≤ 10 с)
+  const r = await fetch(MAIN(env) + "/api/status", { headers: { "user-agent": "svitlo-public" }, signal: AbortSignal.timeout(10000) });
+  if (r.status === 404) throw new Error("на основному боті вимкнена публічна сторінка або версія старіша за 4.0.5");
+  if (!r.ok) throw new Error("основний бот відповів " + r.status);
+  return fromMain(env, await r.json());
+}
+async function snapshot(env, fresh) {
+  const t = Date.now();
+  if (!fresh && SNAP && t - SNAP_TS < 30000) return SNAP;
+  await init(env);
+  let saved = null;
+  try { saved = JSON.parse(await kvGet(env, "pub:snap") || "null"); } catch (e) {}
+  if (!fresh && saved && saved.S && t - saved.at < 90000) { SNAP = saved.S; SNAP_TS = t; return SNAP; }
+  try {
+    SNAP = await pull(env); SNAP_TS = t;
+    await kvSet(env, "pub:snap", JSON.stringify({ at: t, S: SNAP }));
+    return SNAP;
+  } catch (e) {
+    const msg = String(e && e.message || e);
+    if (saved && saved.S) {                             // показуємо останнє, що знаємо (у картці видно, о котрій оновлено)
+      await kvSet(env, "pub:snap", JSON.stringify({ ...saved, err: { at: t, msg } })).catch(() => {});
+      SNAP = saved.S; SNAP_TS = t; return SNAP;
+    }
+    await kvSet(env, "pub:snap", JSON.stringify({ at: 0, S: null, err: { at: t, msg } })).catch(() => {});
+    throw new Error("немає даних від основного бота: " + msg);
+  }
 }
 // Стислі дані для віджета Telegram (≤ 1024 байти): {"t":хвилини,"o":зсув Києва,"q":[[черга,стан,з якої хвилини,"сьогодні","завтра"|null],…]}
 function compact(S) {
@@ -137,10 +154,10 @@ async function onUpdate(env, u) {
 
 // Раз на хвилину: змінилися дані — оновлюємо спільні картки в усіх чатах
 async function refresh(env) {
+  await init(env);
   const list = await widgets(env);
-  if (!list.length) return { skipped: "ще немає картки" };
-  SNAP = null;
-  const data = compact(await snapshot(env)), last = await kvGet(env, "pub:last");
+  if (!list.length) return { skipped: "ще немає картки" };   // нікому не надсилали — основний бот не смикаємо
+  const data = compact(await snapshot(env, true)), last = await kvGet(env, "pub:last");
   const prev = (() => { try { return JSON.parse(last || "null"); } catch (e) { return null; } })();
   // «оновлено о…» змінюється щохвилини; без змін стану картку оновлюємо раз на 10 хв, щоб не смикати Telegram
   const same = prev && JSON.stringify(prev.q) === JSON.stringify(JSON.parse(data).q) && Math.floor(Date.now() / 60000) - prev.t < 10;
@@ -163,8 +180,9 @@ async function setup(env, origin) {
   await tg(env, "setMyDescription", { description: "💡 Світло В Славутичі: наживо — де є світло, а де немає, і графік відключень по чергах. Натисніть «Почати»." });
   await tg(env, "setMyShortDescription", { short_description: "Наживо: де є світло в Славутичі, і графік відключень" });
   out.push(`🤖 Бот: @${me.result.username}`);
-  const S = await snapshot(env);
-  out.push(`📊 Черг у базі: ${S.queues.length}; дані для картки: ${compact(S).length} байт (межа 1024)`);
+  let S = null;
+  try { S = await pull(env); await kvSet(env, "pub:snap", JSON.stringify({ at: Date.now(), S })); SNAP = S; SNAP_TS = Date.now(); } catch (e) { out.push("❌ " + (e && e.message || e) + `\nПеревірте: ${MAIN(env)}/api/status має відкриватися (основний бот 4.0.5+, увімкнена публічна сторінка).`); }
+  if (S) out.push(`📊 Дані з основного бота (${MAIN(env)}): черг ${S.queues.length}; для картки ${compact(S).length} байт (межа 1024)`);
   out.push(`🧩 Віджет: ${new TextEncoder().encode(WIDGET_HTML).length} байт`);
   out.push("Далі: відкрийте бота в Telegram і натисніть «Почати» — прийде картка.");
   return out.join("\n");
@@ -182,11 +200,16 @@ export default {
         return new Response("ok");
       }
       if (p === "/status.json") {
-        return new Response(JSON.stringify(statusJson(await snapshot(env))), { headers: { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*", "cache-control": "public, max-age=60" } });
+        const H = { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*", "cache-control": "public, max-age=60" };
+        try { return new Response(JSON.stringify(statusJson(await snapshot(env))), { headers: H }); }
+        catch (e) { return new Response(JSON.stringify({ v: 1, error: String(e && e.message || e) }), { status: 503, headers: { ...H, "cache-control": "no-store" } }); }
       }
       if (p === "/setup") return new Response(await setup(env, u.origin), { headers: { "content-type": "text/plain; charset=utf-8" } });
       if (p === "/widget-preview") return new Response(`<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><body style="max-width:420px;margin:20px auto;background:#17212b;color:#fff;--tg-theme-text-color:#fff;--tg-theme-hint-color:#8b9bb4;--tg-theme-button-color:#5288c1"><script>window.TelegramWidget={publicData:${JSON.stringify(compact(await snapshot(env)))},onEvent(){},ready(){}}</script>${WIDGET_HTML}`, { headers: { "content-type": "text/html; charset=utf-8" } });
-      return new Response("💡 Світло В Славутичі — бот для мешканців працює.\nДані для віджета: /status.json\nНалаштування бота: /setup", { headers: { "content-type": "text/plain; charset=utf-8" } });
+      await init(env);
+      let sn = null; try { sn = JSON.parse(await kvGet(env, "pub:snap") || "null"); } catch (e) {}
+      const st = !sn ? "даних ще не було (вони з'являться після першого звернення)" : (sn.S ? `дані від ${fmtTime(sn.S.now)}, ${fmtDate(sn.S.now)}` : "даних немає") + (sn.err && sn.err.at > (sn.at || 0) ? `\n⚠️ Останнє звернення до основного бота (${fmtTime(sn.err.at)}): ${sn.err.msg}` : "");
+      return new Response(`💡 Світло В Славутичі — бот для мешканців працює.\nДжерело: ${MAIN(env)}/api/status — ${st}\nДані для віджета: /status.json\nНалаштування бота: /setup`, { headers: { "content-type": "text/plain; charset=utf-8" } });
     } catch (e) {
       return new Response("Помилка: " + (e && e.message || e), { status: 500 });
     }

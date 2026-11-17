@@ -12,6 +12,8 @@ import java.util.List;
 /** Дані про черги з сервера (бот «Світло В Славутичі», /status.json) і їх кеш у пам'яті телефона. */
 final class Data {
     static final String DEFAULT_URL = "https://svitlo-public.a-m-vasylets.workers.dev/status.json";
+    /** Запасне джерело (основний бот, ті самі дані) — якщо бот для мешканців недоступний. */
+    static final String FALLBACK_URL = "https://svitlo51.a-m-vasylets.workers.dev/api/status";
     static final String DEFAULT_SITE = "https://svitlo51.a-m-vasylets.workers.dev/";
     static final String DEFAULT_MAP = "https://desperadoav.github.io/Svitlo_in_Slavutych/";
     static final String[] DEFAULT_QUEUES = {"1.1", "2.1", "3.1", "3.2", "4.1", "6.1"};
@@ -69,15 +71,21 @@ final class Data {
 
     /** Завантажити свіжі дані з сервера. Повертає true, якщо вдалося. */
     static boolean fetch(Context c) {
-        Net.Res r = Net.get(c, url(c));
+        String u = url(c);
+        String err = get(c, u);
+        if (err != null && DEFAULT_URL.equals(u)) { String err2 = get(c, FALLBACK_URL); if (err2 == null) err = null; }   // запасне джерело — лише для звичайної адреси
         SharedPreferences.Editor e = prefs(c).edit();
-        boolean ok = false;
-        if (r.ok && r.body != null) {
-            try { parse(r.body); e.putString("data", r.body).putLong("fetched", System.currentTimeMillis()).remove("error"); ok = true; }
-            catch (Exception x) { e.putString("error", "сервер надіслав незрозумілі дані"); }
-        } else e.putString("error", r.msg);
+        if (err == null) e.remove("error"); else e.putString("error", err);
         e.putLong("tried", System.currentTimeMillis()).apply();
-        return ok;
+        return err == null;
+    }
+    /** Завантажити з однієї адреси; null — вдалося (дані збережено), інакше — текст помилки. */
+    private static String get(Context c, String u) {
+        Net.Res r = Net.get(c, u);
+        if (!r.ok || r.body == null) return r.msg;
+        try { parse(r.body); } catch (Exception x) { return "сервер надіслав незрозумілі дані"; }
+        prefs(c).edit().putString("data", r.body).putLong("fetched", System.currentTimeMillis()).apply();
+        return null;
     }
 
     // ---------- час за Києвом (зсув приходить із сервера — працює навіть на старих телефонах без нових часових поясів) ----------

@@ -1,14 +1,19 @@
 name: Бот для мешканців → Cloudflare
 
-# Викладає бота (папка bot/) у Cloudflare як воркер svitlo-public, кладе туди токен бота і налаштовує вебхук.
+# Викладає бота (папка bot/) у Cloudflare як воркер svitlo-public:
+#   перевіряє код і тести → знаходить акаунт → за потреби реєструє адресу *.workers.dev і створює базу svitlo-public →
+#   викладає воркер → кладе туди токен бота → налаштовує вебхук і команди.
 # Потрібні секрети репозиторію (Settings → Secrets and variables → Actions):
-#   CLOUDFLARE_API_TOKEN — токен Cloudflare з правами «Edit Cloudflare Workers» + D1 Edit
+#   CLOUDFLARE_API_TOKEN — токен Cloudflare: шаблон «Edit Cloudflare Workers» + Account · D1 · Write
 #   BOT_TOKEN            — токен бота від @BotFather
+# Необов'язково: CLOUDFLARE_ACCOUNT_ID (якщо токен має доступ до кількох акаунтів).
 on:
   push:
     branches: [main]
     paths: ['bot/**', '.github/workflows/bot.yml']
   workflow_dispatch:
+
+concurrency: { group: bot-deploy, cancel-in-progress: false }
 
 jobs:
   deploy:
@@ -16,39 +21,117 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: '22' }
+        with: { node-version: '24' }
+
+      - name: Перевірка коду і тести бота
+        run: |
+          set -o pipefail
+          node --check bot/worker.js
+          node -e "import(require('path').resolve('bot/widget.js')).then(m=>{const n=require('zlib').deflateSync(Buffer.from(m.WIDGET_HTML),{level:9}).length;console.log('віджет стиснутий:',n,'байт (межа 4096)');if(n>4096)process.exit(1)})"
+          node bot/test/bot_test.mjs 2>&1 | grep -v -i experimental
+
       - name: Перевірка секретів
+        id: sec
         env:
           CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           BT: ${{ secrets.BOT_TOKEN }}
         run: |
-          [ -n "$CF" ] || { echo "::error::Немає секрету CLOUDFLARE_API_TOKEN (Settings → Secrets and variables → Actions)"; exit 1; }
+          if [ -z "$CF" ]; then
+            echo "::notice::Код перевірено. Щоб викласти в Cloudflare, додайте секрет CLOUDFLARE_API_TOKEN (Settings → Secrets and variables → Actions) і запустіть знову"
+            exit 0
+          fi
+          echo "go=1" >> "$GITHUB_OUTPUT"
           [ -n "$BT" ] || echo "::warning::Немає секрету BOT_TOKEN — бот викладеться, але не працюватиме, доки токен не додано"
-      - name: Перевірка коду бота
-        run: node --check bot/worker.js && node -e "import(require('path').resolve('bot/widget.js')).then(m=>{const n=require('zlib').deflateSync(Buffer.from(m.WIDGET_HTML),{level:9}).length;console.log('віджет стиснутий:',n,'байт (межа 4096)');if(n>4096)process.exit(1)})"
-      - name: Викласти в Cloudflare
-        id: d
-        working-directory: bot
+
+      - name: Акаунт, адреса workers.dev і база
+        if: steps.sec.outputs.go == '1'
+        id: cf
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACC: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx --yes wrangler@4 deploy 2>&1 | tee deploy.log
-          url=$(grep -oE 'https://svitlo-public\.[a-z0-9-]+\.workers\.dev' deploy.log | head -1)
-          echo "url=$url" >> $GITHUB_OUTPUT
-          echo "Адреса бота: $url"
-      - name: Токен бота → Cloudflare
+          set -o pipefail
+          API=https://api.cloudflare.com/client/v4
+          api() { curl -sS --max-time 60 -H "Authorization: Bearer $T" -H "content-type: application/json" "$@"; }
+          fail() { echo "::error::$1"; echo "Відповідь Cloudflare: $2" | head -c 1500; exit 1; }
+
+          # 1) акаунт
+          if [ -z "$ACC" ]; then
+            r=$(api "$API/accounts?per_page=50")
+            echo "$r" | jq -e .success >/dev/null || fail "Токен Cloudflare не підходить (перевірте, що скопійовано повністю)" "$r"
+            n=$(echo "$r" | jq '.result | length')
+            [ "$n" -ge 1 ] || fail "Токен не має доступу до жодного акаунта: у токені Account Resources → Include → свій акаунт" "$r"
+            ACC=$(echo "$r" | jq -r '.result[0].id')
+            echo "Акаунт: $(echo "$r" | jq -r '.result[0].name') (усього доступно: $n)"
+          fi
+          echo "acc=$ACC" >> "$GITHUB_OUTPUT"
+          echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> "$GITHUB_ENV"
+
+          # 2) адреса *.workers.dev (у нового акаунта її може ще не бути)
+          r=$(api "$API/accounts/$ACC/workers/subdomain")
+          sub=$(echo "$r" | jq -r '.result.subdomain // empty')
+          if [ -z "$sub" ]; then
+            for s in desperadoav svitlo-slavutych svitlo-v-slavutychi desperadoav-svitlo; do
+              r=$(api -X PUT "$API/accounts/$ACC/workers/subdomain" -d "{\"subdomain\":\"$s\"}")
+              if echo "$r" | jq -e .success >/dev/null; then sub=$s; echo "Зареєстровано адресу: $s.workers.dev"; echo "new_sub=1" >> "$GITHUB_OUTPUT"; break; fi
+              echo "Адреса $s.workers.dev недоступна: $(echo "$r" | jq -c '.errors')"
+            done
+          fi
+          [ -n "$sub" ] || fail "Не вдалося отримати адресу *.workers.dev. Відкрийте в Cloudflare Workers & Pages — він запропонує вибрати адресу — і запустіть знову" "$r"
+          echo "Адреса акаунта: $sub.workers.dev"
+          echo "url=https://svitlo-public.$sub.workers.dev" >> "$GITHUB_OUTPUT"
+
+          # 3) база D1 svitlo-public
+          r=$(api "$API/accounts/$ACC/d1/database?name=svitlo-public&per_page=100")
+          echo "$r" | jq -e .success >/dev/null || fail "Немає доступу до баз D1: додайте в токен Account · D1 · Write" "$r"
+          id=$(echo "$r" | jq -r '.result[] | select(.name=="svitlo-public") | .uuid' | head -1)
+          if [ -z "$id" ]; then
+            r=$(api -X POST "$API/accounts/$ACC/d1/database" -d '{"name":"svitlo-public"}')
+            id=$(echo "$r" | jq -r '.result.uuid // empty')
+            [ -n "$id" ] || fail "Не вдалося створити базу svitlo-public (потрібен дозвіл D1 · Write)" "$r"
+            echo "Створено базу svitlo-public"
+          fi
+          echo "База svitlo-public: $id"
+          sed -i "s/\"database_id\": \"AUTO\"/\"database_id\": \"$id\"/" bot/wrangler.jsonc
+          grep -q "$id" bot/wrangler.jsonc || fail "Не вдалося вписати ID бази в bot/wrangler.jsonc" ""
+
+      - name: Викласти в Cloudflare
+        if: steps.sec.outputs.go == '1'
         working-directory: bot
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy
+
+      - name: Токен бота → Cloudflare
+        if: steps.sec.outputs.go == '1'
+        working-directory: bot
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           BT: ${{ secrets.BOT_TOKEN }}
         run: |
           [ -n "$BT" ] || exit 0
           printf '%s' "$BT" | npx --yes wrangler@4 secret put BOT_TOKEN
+
       - name: Налаштувати бота (вебхук, команди)
-        if: steps.d.outputs.url != ''
+        if: steps.sec.outputs.go == '1'
+        env:
+          URL: ${{ steps.cf.outputs.url }}
+          BT: ${{ secrets.BOT_TOKEN }}
         run: |
-          sleep 10
-          curl -sS --max-time 60 "${{ steps.d.outputs.url }}/setup" | tee setup.txt
-          grep -q "✅ Вебхук" setup.txt || { echo "::warning::Налаштування бота не підтвердилось — див. текст вище"; }
+          # нова адреса *.workers.dev і щойно доданий токен можуть запрацювати не одразу — пробуємо до ~5 хв
+          for i in $(seq 1 30); do
+            if curl -sS --max-time 60 "$URL/setup" -o setup.txt 2>/dev/null; then
+              grep -q "✅ Вебхук" setup.txt && break
+              [ -z "$BT" ] && grep -q "BOT_TOKEN" setup.txt && break
+            fi
+            sleep 10
+          done
+          cat setup.txt || true
+          echo
+          {
+            echo "## 💡 Бот для мешканців"
+            echo "Адреса: $URL"
+            echo '```'; cat setup.txt 2>/dev/null; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          grep -q "✅ Вебхук" setup.txt || echo "::warning::Налаштування бота не підтвердилось — див. текст вище"
+          echo "ГОТОВО: $URL"
