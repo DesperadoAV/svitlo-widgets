@@ -13,6 +13,8 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "svitlo-public", "database_id": "AUTO" }
   ],
+  // виклик самого себе — щоб розіслати сповіщення багатьом людям швидше (кілька помічників паралельно)
+  "services": [{ "binding": "SELF", "service": "svitlo-public" }],
   // звідки брати дані (основний бот, версія 4.0.5+)
   "vars": { "MAIN_URL": "https://svitlo51.a-m-vasylets.workers.dev" },
   "observability": { "enabled": true }

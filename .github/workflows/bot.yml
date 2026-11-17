@@ -29,6 +29,7 @@ jobs:
           node --check bot/worker.js
           node -e "import(require('path').resolve('bot/widget.js')).then(m=>{const n=require('zlib').deflateSync(Buffer.from(m.WIDGET_HTML),{level:9}).length;console.log('віджет стиснутий:',n,'байт (межа 4096)');if(n>4096)process.exit(1)})"
           node bot/test/bot_test.mjs 2>&1 | grep -v -i experimental
+          node bot/test/notify_test.mjs 2>&1 | grep -v -i experimental
 
       - name: Перевірка секретів
         id: sec
@@ -102,15 +103,19 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: npx --yes wrangler@4 deploy
 
-      - name: Токен бота → Cloudflare
+      - name: Токени (бот, Firebase) → Cloudflare
         if: steps.sec.outputs.go == '1'
         working-directory: bot
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           BT: ${{ secrets.BOT_TOKEN }}
+          FCM: ${{ secrets.FCM_SERVICE_ACCOUNT }}
         run: |
-          [ -n "$BT" ] || exit 0
-          printf '%s' "$BT" | npx --yes wrangler@4 secret put BOT_TOKEN
+          if [ -n "$BT" ]; then printf '%s' "$BT" | npx --yes wrangler@4 secret put BOT_TOKEN; fi
+          if [ -n "$FCM" ]; then
+            echo "$FCM" | jq -e '.private_key and .client_email and .project_id' >/dev/null || { echo "::error::FCM_SERVICE_ACCOUNT — не той файл: потрібен ключ сервісного акаунта Firebase (Project settings → Service accounts → Generate new private key)"; exit 1; }
+            printf '%s' "$FCM" | npx --yes wrangler@4 secret put FCM_SA
+          else echo "::notice::Немає секрету FCM_SERVICE_ACCOUNT — сповіщення в застосунок (Firebase) поки вимкнені, у Telegram працюють"; fi
 
       - name: Налаштувати бота (вебхук, команди)
         if: steps.sec.outputs.go == '1'
