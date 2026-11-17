@@ -152,7 +152,7 @@ const myQueues = async (env, chat) => (await env.DB.prepare("SELECT queue FROM s
 async function sendStatus(env, chat, pin) {
   const S = await snapshot(env), v = statusView(S, [], await myQueues(env, chat));
   const r = await tg(env, "sendMessage", { chat_id: chat, parse_mode: "HTML", disable_web_page_preview: true, ...v });
-  if (pin && r.ok) { await tg(env, "unpinAllChatMessages", { chat_id: chat }); await tg(env, "pinChatMessage", { chat_id: chat, message_id: r.result.message_id, disable_notification: true }); }
+  if (pin && r.ok) await tg(env, "pinChatMessage", { chat_id: chat, message_id: r.result.message_id, disable_notification: true });   // закріплюємо лише перший раз (кнопка 🔄 оновлює його)
   return r;
 }
 async function secret(env) {                            // секрет вебхука — з токена, щоб нічого окремо не налаштовувати
@@ -165,11 +165,11 @@ const keyboard = S => ({ inline_keyboard: [[{ text: "🗺 Мапа черг", ur
 // Список спільних віджетів: [{id, ver}] — оновлюємо всі (старі версії теж, щоб у людей не «застигали» картки)
 async function widgets(env) { try { return JSON.parse(await kvGet(env, "pub:widgets") || "[]"); } catch (e) { return []; } }
 
-async function sendCard(env, chat) {
+async function sendCard(env, chat, first) {
   // 13.11.2026 Telegram вимкнув картки-віджети для всіх ботів. Поки так — стан черг повідомленням із кнопками;
   // раз на 6 год пробуємо знову, і щойно Telegram дозволить — бот сам почне надсилати картки.
   const off = +(await kvGet(env, "pub:wdg_off") || 0);
-  if (off && Date.now() - off < 6 * 3600000) return sendStatus(env, chat, true);
+  if (off && Date.now() - off < 6 * 3600000) return sendStatus(env, chat, first);
   const S = await snapshot(env), data = compact(S), list = await widgets(env), cur = list.find(w => w.ver === WIDGET_VER);
   let r;
   if (cur) r = await tg(env, "sendSharedWidget", { chat_id: chat, widget_id: cur.id, caption: CAPTION, reply_markup: keyboard(S) });
@@ -179,20 +179,25 @@ async function sendCard(env, chat) {
     if (id) { await kvSet(env, "pub:widgets", JSON.stringify([...list.filter(w => w.id !== id), { id, ver: WIDGET_VER, at: Date.now() }].slice(-5))); await kvSet(env, "pub:last", data); }
   }
   if (r && r.ok && r.result && r.result.message_id) {   // картку — нагору чату (закріпити), щоб завжди була під рукою
-    await tg(env, "unpinAllChatMessages", { chat_id: chat });
-    await tg(env, "pinChatMessage", { chat_id: chat, message_id: r.result.message_id, disable_notification: true });
+    if (first) await tg(env, "pinChatMessage", { chat_id: chat, message_id: r.result.message_id, disable_notification: true });
     if (off) await kvSet(env, "pub:wdg_off", "0");
   } else if (r && !r.ok) {
     if (/NOT_ALLOWED/i.test(String(r.description || ""))) await kvSet(env, "pub:wdg_off", String(Date.now()));
-    return sendStatus(env, chat, true);
+    return sendStatus(env, chat, first);
   }
   return r;
 }
 async function onUpdate(env, u) {
-  const m = u.message || u.edited_message;
+  const m = u.message;                                  // змінені повідомлення не обробляємо
   if (m && m.chat && m.chat.type === "private") {
+    // ⚠️ відповідаємо лише на повідомлення людини: службові («прикріплює…»), від ботів і без тексту — пропускаємо,
+    // інакше закріплення стану породжує нове оновлення → новий стан → нове закріплення… (так було 17.11 о 20:07)
+    if ((m.from && m.from.is_bot) || m.pinned_message || typeof m.text !== "string") return;
     const now = Date.now();
+    const prev = await env.DB.prepare("SELECT last_ts, n FROM pub_users WHERE chat_id=?").bind(m.chat.id).first();
     await env.DB.prepare("INSERT INTO pub_users(chat_id,first_ts,last_ts,n) VALUES(?,?,?,1) ON CONFLICT(chat_id) DO UPDATE SET last_ts=excluded.last_ts, n=n+1").bind(m.chat.id, now, now).run();
+    if (prev && now - prev.last_ts < 2000) return;      // запобіжник: не частіше ніж раз на 2 с
+    const first = !prev;
     const t = String(m.text || "");
     if (/^\/(notify|alerts?)\b/.test(t)) return tg(env, "sendMessage", { chat_id: m.chat.id, parse_mode: "HTML", ...(await notifyMenu(env, m.chat.id)) });
     if (/^\/status\b/.test(t)) return sendStatus(env, m.chat.id, false);
@@ -201,7 +206,7 @@ async function onUpdate(env, u) {
       return tg(env, "sendMessage", { chat_id: m.chat.id, parse_mode: "HTML", reply_markup: keyboard(S),
         text: "💡 <b>Світло В Славутичі</b>\n\nПовідомлення зі станом черг показує, де є світло, а де немає, і графік відключень.\n• Натисніть на чергу — покажу графік на сьогодні й завтра і коли наступне відключення.\n• 🔄 — оновити стан у тому самому повідомленні.\n• /notify — 🔔 сповіщення: світло зникло, з'явилось і за 10 хв до планового відключення.\n• /status або /start — надіслати стан ще раз.\n\nСтан визначають пристрої в будинках кожної черги — це факт, а не графік." });
     }
-    return sendCard(env, m.chat.id);
+    return sendCard(env, m.chat.id, first);
   }
   if (u.callback_query) return onCallback(env, u.callback_query);
   if (u.widget_query) return tg(env, "answerWidgetQuery", { widget_query_id: u.widget_query.id });   // віджет запитів не надсилає — про всяк випадок відповідаємо

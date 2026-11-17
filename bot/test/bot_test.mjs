@@ -65,7 +65,7 @@ chk("…картку закріплено", L.some(x=>x.m==="pinChatMessage" && 
 L=await tgp(777,"привіт");
 chk("інший користувач — той самий спільний віджет (sendSharedWidget W1)", L.some(x=>x.m==="sendSharedWidget" && x.b.widget_id==="W1") && !L.some(x=>x.m==="sendWidget"));
 chk("користувачі записані", sqlite.prepare("SELECT COUNT(*) n FROM pub_users").get().n===2);
-L=await tgp(555,"/help"); chk("/help — пояснення з кнопками", L.some(x=>x.m==="sendMessage" && x.b.text.includes("/notify") && x.b.text.includes("🔄")));
+NOW+=3000; L=await tgp(555,"/help"); chk("/help — пояснення з кнопками", L.some(x=>x.m==="sendMessage" && x.b.text.includes("/notify") && x.b.text.includes("🔄")));
 // оновлення
 later(60000); MAIN_HITS=0; L=await cron();
 chk("щохвилинний запуск без змін — один запит до основного бота, Telegram не смикаємо", MAIN_HITS===1 && !L.some(x=>x.m==="editSharedWidgetData"), MAIN_HITS);
@@ -108,6 +108,16 @@ chk("…ще «6.1» — розкриті обидві", ex && ex.b.reply_markup
 L=await cbk(4243,"r",ex.b.reply_markup); ex=L.find(x=>x.m==="editMessageText");
 chk("🔄 — оновлено в тому самому повідомленні, розкриті лишаються; підказка з часом", ex && ex.b.message_id===900 && ex.b.reply_markup.inline_keyboard.flat().filter(k=>/^▾/.test(k.text)).length===2 && L.some(x=>x.m==="answerCallbackQuery" && /дані на/.test(x.b.text)));
 NOW+=7*3600000; WIDGET_FAIL=null; L=await tgp(4244,"/start"); chk("через 6+ год пробує картку знову; Telegram дозволив — картка", L.some(x=>x.m==="sendWidget") && !L.some(x=>x.m==="sendMessage") && sqlite.prepare("SELECT v FROM kv WHERE k='pub:wdg_off'").get().v==="0");
+// 🔁 без зациклення: службове «прикріплює…», повідомлення від бота, змінене повідомлення — без відповіді
+NOW+=60000; const raw=async u=>{ const n=log.length; await B("/tg",{method:"POST",headers:{"x-telegram-bot-api-secret-token":SEC},body:JSON.stringify({update_id:Math.random(),...u})}); return log.slice(n); };
+L=await raw({message:{chat:{id:4242,type:"private"},from:{id:999,is_bot:true},pinned_message:{message_id:5}}});
+chk("службове «прикріплює…» — бот не відповідає (немає зациклення)", L.length===0, L.map(x=>x.m).join(","));
+L=await raw({message:{chat:{id:4242,type:"private"},from:{id:4242},pinned_message:{message_id:5}}}); chk("…навіть якщо від людини", L.length===0);
+L=await raw({message:{chat:{id:4242,type:"private"},from:{id:777,is_bot:true},text:"/start"}}); chk("повідомлення від бота — без відповіді", L.length===0);
+L=await raw({edited_message:{chat:{id:4242,type:"private"},from:{id:4242},text:"/start"}}); chk("змінене повідомлення — без відповіді", L.length===0);
+L=await raw({message:{chat:{id:4242,type:"private"},from:{id:4242},sticker:{file_id:"x"}}}); chk("стікер/фото без тексту — без відповіді", L.length===0);
+NOW+=60000; L=await tgp(4242,"/start"); const L2=await tgp(4242,"/start");
+chk("два /start за мить — одна відповідь; повторний /start не закріплює знову", L.filter(x=>x.m==="sendMessage"||x.m==="sendWidget"||x.m==="sendSharedWidget").length===1 && L2.length===0 && !L.some(x=>x.m==="pinChatMessage"||x.m==="unpinAllChatMessages"), L.map(x=>x.m).join(",")+" / "+L2.map(x=>x.m).join(","));
 // розмір даних: багато інтервалів
 const many=[]; for(let h=0;h<24;h+=2) many.push([`${String(h).padStart(2,"0")}:00`,`${String(h).padStart(2,"0")}:30`]);
 for (const q of FAKE.queues) { q.today=many; q.tomorrow=many; }
