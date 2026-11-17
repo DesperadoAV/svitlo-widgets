@@ -27,9 +27,17 @@ public class PreviewActivity extends Activity {
         FrameLayout root = new FrameLayout(this); root.setBackgroundColor(0xFF3B4A5A);
         int pad = Ui.dp(this, 12);
         RemoteViews rv = CardsWidget.build(this, ID, false, h);
-        View w = rv.apply(this, root);
+        // та сама оболонка, що й на робочому столі: без неї Android не показує список карток (Android 12+)
+        final android.appwidget.AppWidgetHostView host = new android.appwidget.AppWidgetHostView(this);
+        View w = rv.apply(this, host);
+        host.addView(w, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, h)); lp.setMargins(pad, pad * 3, pad, pad);
-        root.addView(w, lp);
+        root.addView(host, lp);
+        host.postDelayed(new Runnable() { @Override public void run() {   // для тестів: скільки карток справді намальовано
+            View l = host.findViewById(R.id.list), cs = host.findViewById(R.id.cards);
+            int n = l != null && l.getVisibility() == View.VISIBLE ? ((ViewGroup) l).getChildCount() : cs != null ? ((ViewGroup) cs).getChildCount() : -1;
+            Log.i("SvitloPreview", "drawn " + n);
+        } }, 2500);
         Ui.insets(root, 0, 0, 0, 0);
         setContentView(root);
 

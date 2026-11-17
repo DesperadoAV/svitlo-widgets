@@ -29,6 +29,7 @@ check "головний екран відкрив тестовий сайт (н�
 check "назва не залазить на рядок стану ($(A logcat -d -s SvitloMain:I | grep -o 'title_y.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'title_y.* OK'"
 A shell am start -S -W -n $PKG/.PreviewActivity >/dev/null 2>&1; sleep 4
 shot 02_vidzhet
+check "віджет: картки справді намальовані ($(A logcat -d -s SvitloPreview:I | grep -o 'drawn.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -o 'drawn [0-9]*' | tail -1 | grep -q 'drawn [1-9]'"
 check "віджет: усі 6 карток влазять ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'cards 6 shown 6 hidden 0'"
 A shell am start -S -W -n $PKG/.PreviewActivity --es toggle 3.2 >/dev/null 2>&1; sleep 4
 shot 03_rozkryto_3_2
