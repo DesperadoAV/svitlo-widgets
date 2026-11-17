@@ -15,8 +15,8 @@ jobs:
     outputs:
       ok: ${{ steps.b.outputs.ok }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '17' }
       - name: Збірка APK
         id: b
@@ -44,7 +44,7 @@ jobs:
           - { api: 30, target: google_apis, arch: x86_64 }
           - { api: 35, target: google_apis, arch: x86_64 }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with: { name: apk, path: apk }
       - name: KVM
@@ -79,7 +79,7 @@ jobs:
           mkdir -p pub/tests
           cp art/apk/* pub/ 2>/dev/null || true
           for d in art/test-api*; do [ -d "$d" ] || continue; n=$(basename $d); mkdir -p pub/tests/$n; cp $d/*.png $d/results.txt $d/crash.txt $d/logcat-app.txt pub/tests/$n/ 2>/dev/null || true; done
-          { echo "Збірка: ${{ github.sha }} · run ${{ github.run_number }}"; echo "Тести: ${{ needs.test.result }}"; for f in pub/tests/*/results.txt; do echo; echo "== $(basename $(dirname $f))"; cat $f; done; } > pub/SUMMARY.txt
+          { echo "Збірка: ${{ github.sha }} · run ${{ github.run_number }}"; echo "Тести: ${{ needs.test.result }}"; for f in pub/tests/*/results.txt; do [ -f "$f" ] || continue; echo; echo "== $(basename $(dirname $f))"; cat "$f"; done; [ -f art/apk/build.log ] && { echo; echo "== збірка"; tail -30 art/apk/build.log; }; true; } > pub/SUMMARY.txt
           cd pub && git init -q && git checkout -q -b app-build && git add -A
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "Застосунок-віджет: збірка ${{ github.run_number }}"
           git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" app-build
