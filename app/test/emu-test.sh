@@ -46,6 +46,18 @@ if [ "$API" -ge 31 ]; then
 else
   check "малий віджет: показує, що влазить, і «ще N» ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep 'cards' | tail -1 | grep -q 'hidden [1-9]'"
 fi
+# плитки: квадратик (1×1), смужка (2×1, 4×1), сітка (2×2) — колір = є світло чи ні, 💡 і номер, час
+tilecheck() {   # $1 — назва, $2 — параметри перегляду, $3 — очікуваний вигляд, $4 — скільки плиток намальовано, $5 — файл скріна
+  A shell am start -S -W -n $PKG/.PreviewActivity $2 >/dev/null 2>&1; sleep 4
+  shot "$5"
+  local got; got="$(A logcat -d -s SvitloPreview:I | grep -o 'mode tiles.*' | tail -1); $(A logcat -d -s SvitloPreview:I | grep -o 'drawn [0-9]*' | tail -1)"
+  check "$1 ($got)" "echo \"$got\" | grep -q '$3' && echo \"$got\" | grep -q 'drawn $4\$'"
+}
+tilecheck "квадратик 1×1: 💡 і номер черги" "--es queues 3.2 --ei w 70 --ei h 70" "70x70 cols 1 rows 1 n 1 kind 0 first 3.2" 1 05a_kvadratyk
+tilecheck "смужка 2×1, одна черга: стан і час докладно" "--es queues 3.2 --ei w 150 --ei h 70" "cols 1 rows 1 n 1 kind 2" 1 05b_smuzhka_2
+tilecheck "смужка 4×1, усі черги: 4 плитки з часом" "--es queues all --ei w 300 --ei h 70" "cols 4 rows 1 n 4 kind 1" 4 05c_smuzhka_4
+tilecheck "сітка 2×2: 4 плитки" "--es queues all --ei w 150 --ei h 150" "cols 2 rows 2 n 4 kind 1" 4 05d_sitka_2x2
+check "час на плитці: світла немає → «до …», є → «відкл …» або «з …»" "A logcat -d -s SvitloPreview:I | grep 'mode tiles' | grep -q 'time «\(до\|відкл\|з\) [0-9][0-9]:[0-9][0-9]»'"
 A shell am start -W -n $PKG/.ConfigActivity --ei appWidgetId 424242 >/dev/null 2>&1; sleep 3
 shot 05_vybir_cherh
 A shell input keyevent 4; sleep 1

@@ -154,9 +154,126 @@ public class CardsWidget extends AppWidgetProvider {
      * Старіші Android: картки одним блоком — стільки, скільки влазить (hDp > 0 — висота задана, для перегляду в застосунку).
      */
     static RemoteViews build(Context c, int id, boolean loading, int hDp) {
-        if (Build.VERSION.SDK_INT >= 31) return buildList(c, id, loading, hDp > 0 ? 0 : widthDp(c, id));
-        if (hDp > 0) return buildFor(c, id, loading, hDp, 0);
-        return buildFor(c, id, loading, heightDp(c, id), widthDp(c, id));
+        if (hDp > 0) { android.util.DisplayMetrics dm = c.getResources().getDisplayMetrics(); return buildSized(c, id, loading, Math.round(dm.widthPixels / dm.density) - 24, hDp); }
+        if (Build.VERSION.SDK_INT >= 31) {                          // точні розміри від робочого стола (вертикально й горизонтально) — вигляд для кожного
+            try {
+                Bundle o = AppWidgetManager.getInstance(c).getAppWidgetOptions(id);
+                java.util.ArrayList<android.util.SizeF> sizes = o == null ? null : o.<android.util.SizeF>getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
+                if (sizes != null && !sizes.isEmpty()) {
+                    java.util.Map<android.util.SizeF, RemoteViews> m = new java.util.HashMap<>();
+                    for (android.util.SizeF s : sizes) if (m.size() < 16 && !m.containsKey(s)) m.put(s, buildSized(c, id, loading, Math.round(s.getWidth()), Math.round(s.getHeight())));
+                    return m.size() == 1 ? m.values().iterator().next() : new RemoteViews(m);
+                }
+            } catch (Exception ignored) { }
+        }
+        return buildSized(c, id, loading, widthDp(c, id), heightDp(c, id));
+    }
+
+    /** Вузький або низький віджет — плитки (квадратик, смужка, сітка); більший — картки. */
+    static boolean tiles(int wDp, int hDp) { return hDp < 100 || wDp < 200; }
+    static RemoteViews buildSized(Context c, int id, boolean loading, int wDp, int hDp) {
+        if (tiles(wDp, hDp)) return buildTiles(c, id, wDp, hDp);
+        return listMode() ? buildList(c, id, loading, wDp) : buildFor(c, id, loading, hDp, wDp);
+    }
+
+    // ---------- плитки ----------
+    /** Скільки плиток і як: {стовпців, рядків, плиток, вид: 0 — квадратик (💡 і номер), 1 — плитка з часом, 2 — широка з подробицями}. */
+    static int[] tileGrid(int count, int wDp, int hDp) {
+        int cols = Math.max(1, (wDp - 4) / 62), rows = hDp < 100 ? 1 : Math.max(1, (hDp - 4) / 62);
+        int n = Math.max(1, Math.min(count, cols * rows));
+        int c2 = Math.min(cols, n), r2 = (n + c2 - 1) / c2;
+        float tw = (wDp - 4) / (float) c2, th = (hDp - 4) / (float) r2;
+        int kind = tw >= 130 && th >= 44 ? 2 : (n == 1 && tw < 100) || th < 50 ? 0 : 1;
+        return new int[]{c2, r2, n, kind};
+    }
+
+    static RemoteViews buildTiles(Context c, int id, int wDp, int hDp) {
+        RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.tiles);
+        Data d = Data.cached(c);
+        List<Data.Q> all = chosen(c, d, id);
+        PendingIntent open = PendingIntent.getActivity(c, id * 10 + 4, new Intent(c, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | immutable());
+        rv.setViewVisibility(R.id.tempty, all.isEmpty() ? View.VISIBLE : View.GONE);
+        rv.setOnClickPendingIntent(R.id.tempty, open);
+        if (all.isEmpty()) return rv;
+        int[] g = tileGrid(all.size(), wDp, hDp);
+        long now = System.currentTimeMillis();
+        for (int r = 0, i = 0; r < g[1] && i < g[2]; r++) {
+            RemoteViews row = new RemoteViews(c.getPackageName(), R.layout.tile_row);
+            for (int k = 0; k < g[0]; k++, i++) {
+                if (i >= g[2]) { RemoteViews blank = new RemoteViews(c.getPackageName(), R.layout.tile); blank.setViewVisibility(R.id.tile, View.INVISIBLE); row.addView(R.id.row, blank); continue; }
+                row.addView(R.id.row, tile(c, d, all.get(i), g[3], now, open));
+            }
+            rv.addView(R.id.troot, row);
+        }
+        return rv;
+    }
+
+    static RemoteViews tile(Context c, Data d, Data.Q q, int kind, long now, PendingIntent open) {
+        int bg = q.state > 0 ? R.drawable.tile_on : q.state == 0 ? R.drawable.tile_off : R.drawable.tile_na;
+        RemoteViews v;
+        if (kind == 2) {
+            v = new RemoteViews(c.getPackageName(), R.layout.tile_wide);
+            v.setTextViewText(R.id.w2, q.name);
+            v.setTextViewText(R.id.w3, q.state > 0 ? "Світло є" : q.state == 0 ? "Світла немає" : "Немає даних");
+            v.setTextViewText(R.id.w4, tileDetail(d, q, now));
+        } else {
+            v = new RemoteViews(c.getPackageName(), R.layout.tile);
+            if (kind == 0) {                                        // квадратик: 💡 над номером черги
+                v.setTextViewText(R.id.tl1, "💡"); v.setTextViewTextSize(R.id.tl1, android.util.TypedValue.COMPLEX_UNIT_SP, 18);
+                v.setTextViewText(R.id.tl2, q.name); v.setTextViewTextSize(R.id.tl2, android.util.TypedValue.COMPLEX_UNIT_SP, 15);
+            } else {
+                v.setTextViewText(R.id.tl1, "💡" + q.name);
+                v.setTextViewText(R.id.tl2, tileTime(d, q, now));
+            }
+        }
+        v.setInt(R.id.tile, "setBackgroundResource", bg);
+        v.setOnClickPendingIntent(R.id.tile, open);
+        return v;
+    }
+
+    // ---------- час для плиток: за графіком ----------
+    /** [поточне відключення: кінець] або -1; хвилини від початку сьогоднішньої доби (за північ — 1440+). */
+    static int outageEnd(int[][] a, int[][] b, int m) {
+        if (a != null) for (int[] x : a) if (x[0] <= m && m < x[1]) {
+            int e = x[1];
+            if (e >= 1440 && b != null) for (int[] y : b) if (y[0] == 0) e = 1440 + y[1];
+            return e;
+        }
+        return -1;
+    }
+    /** Наступний початок відключення після m (сьогодні або завтра; продовження через північ — не початок) або -1. */
+    static int nextStart(int[][] a, int[][] b, int m) {
+        boolean endsAtMidnight = false;
+        if (a != null) for (int[] x : a) { if (x[0] > m) return x[0]; if (x[1] >= 1440) endsAtMidnight = true; }
+        if (b != null) for (int[] y : b) { if (y[0] == 0 && endsAtMidnight) continue; return 1440 + y[0]; }
+        return -1;
+    }
+    static int[][][] days(Data d, Data.Q q, long now) {
+        int sh = d.dayShift(now);
+        return new int[][][]{ sh <= 0 ? q.today : sh == 1 ? q.tomorrow : null, sh <= 0 ? q.tomorrow : null };
+    }
+    /** Коротко: світла немає — «до 17:00» (коли за графіком увімкнуть); є — «відкл 20:30»; інакше — «з 18:30». */
+    static String tileTime(Data d, Data.Q q, long now) {
+        if (d == null || q.state < 0) return "немає даних";
+        int[][][] dd = days(d, q, now); int m = d.kyivMin(now);
+        int t = q.state == 0 ? outageEnd(dd[0], dd[1], m) : nextStart(dd[0], dd[1], m);
+        if (t >= 0) return (q.state == 0 ? "до " : "відкл ") + Data.hm(t % 1440);
+        return q.since > 0 ? "з " + d.hm(q.since) : "";
+    }
+    /** Докладніше (широка плитка): з якого часу + графік. */
+    static String tileDetail(Data d, Data.Q q, long now) {
+        if (d == null || q.state < 0) return "";
+        int[][][] dd = days(d, q, now); int m = d.kyivMin(now);
+        String since = q.since > 0 ? "з " + d.hm(q.since) + (d.kyivDay(q.since) != d.kyivDay(now) ? " " + d.ddmm(q.since) : "") : "";
+        String plan;
+        if (q.state == 0) {
+            int e = outageEnd(dd[0], dd[1], m);
+            plan = e >= 0 ? "за графіком до " + Data.hm(e % 1440) + (e >= 1440 ? " завтра" : "") : dd[0] != null ? "позапланово" : "";
+        } else {
+            int s = nextStart(dd[0], dd[1], m);
+            plan = s >= 0 ? "відключення " + (s >= 1440 ? "завтра " : "") + "о " + Data.hm(s % 1440) : dd[0] != null ? "відключень за графіком немає" : "";
+        }
+        return since + (since.length() > 0 && plan.length() > 0 ? " · " : "") + plan;
     }
 
     static List<Data.Q> chosen(Context c, Data d, int id) {
@@ -182,6 +299,7 @@ public class CardsWidget extends AppWidgetProvider {
 
     /** Заголовок (оновлено…, ↻, ⚙, назва → застосунок) і напис, коли карток немає. */
     static void header(Context c, RemoteViews rv, int id, boolean loading, Data d, boolean none) {
+        rv.setInt(R.id.root, "setBackgroundResource", Prefs.dark(c, id) ? R.drawable.bg_widget : 0);   // фон: прозорий (типово) або темний
         String err = Data.prefs(c).getString("error", null);
         String up;
         if (loading) up = "оновлюю…";

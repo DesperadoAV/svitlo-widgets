@@ -16,7 +16,7 @@ import java.util.List;
 /** Вибір черг для віджета: відкривається, коли віджет додають на робочий стіл, і з кнопки ⚙ на віджеті. */
 public class ConfigActivity extends Activity {
     int id = AppWidgetManager.INVALID_APPWIDGET_ID;
-    LinearLayout list; final List<CheckBox> boxes = new ArrayList<>(); TextView note;
+    LinearLayout list; final List<CheckBox> boxes = new ArrayList<>(); TextView note; CheckBox dark;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -32,11 +32,13 @@ public class ConfigActivity extends Activity {
         Ui.text(this, root, "Які черги показувати у віджеті?", 17, Ui.TEXT, false).setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 6));
         list = new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); root.addView(list);
         note = Ui.text(this, root, "", 13, Ui.HINT, false);
+        dark = new CheckBox(this); dark.setText("Темний фон під картками (інакше — прозорий)"); dark.setTextSize(15); dark.setTextColor(Ui.TEXT);
+        dark.setChecked(Prefs.dark(this, id)); dark.setPadding(Ui.dp(this, 6), Ui.dp(this, 10), 0, Ui.dp(this, 6)); root.addView(dark);
         LinearLayout row = new LinearLayout(this); root.addView(row);
         Ui.button(this, row, "Усі", 0xFF3A3A3A, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { for (CheckBox x : boxes) x.setChecked(true); } });
         Ui.button(this, row, "Зберегти", 0xFF2980B9, 2).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { save(); } });
         Ui.button(this, root, "🔔 Сповіщення про світло…", 0xFF3A3A3A, 0).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(ConfigActivity.this, NotifyActivity.class)); } });
-        Ui.text(this, root, "Порада: на віджеті натисніть на чергу — розкриється графік на сьогодні й завтра. Розмір віджета можна змінити, затиснувши його пальцем: що більший віджет, то більше карток і графіків влазить. Натисніть назву «Світло В Славутичі» на віджеті — відкриється застосунок із мапою черг і сайтом.", 13, Ui.HINT, false).setPadding(0, Ui.dp(this, 12), 0, 0);
+        Ui.text(this, root, "Порада: на віджеті натисніть на чергу — розкриється графік на сьогодні й завтра. Розмір віджета можна змінити, затиснувши його пальцем. Великий — картки з графіками; низький (смужка в один ряд) — кольорові квадратики черг: зелений — світло є, червоний — немає, під номером — до котрої немає світла або коли відключення. Найменший — один квадратик (перша вибрана черга). Натисніть назву або квадратик — відкриється застосунок із мапою черг і сайтом.", 13, Ui.HINT, false).setPadding(0, Ui.dp(this, 12), 0, 0);
         setContentView(sv);
         fill(Data.cached(this));
         if (Data.cached(this) == null) {
@@ -68,6 +70,7 @@ public class ConfigActivity extends Activity {
         for (CheckBox x : boxes) if (x.isChecked()) sel.add((String) x.getTag());
         if (sel.isEmpty()) { note.setText("Виберіть хоча б одну чергу."); return; }
         Prefs.setSelected(this, id, sel.size() == boxes.size() ? null : sel);
+        Prefs.setDark(this, id, dark.isChecked());
         CardsWidget.updateAll(this);
         if (Data.cached(this) == null) CardsWidget.fetchAsync(this, null);
         setResult(RESULT_OK, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id));

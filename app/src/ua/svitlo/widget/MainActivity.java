@@ -39,6 +39,9 @@ public class MainActivity extends Activity {
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
         web.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView v, String url) {   // у застосунку — без підпису під картками сайту
+                v.evaluateJavascript("(function(){var e=document.querySelector('.ft');if(e)e.style.display='none';})()", null);
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView v, String url) {
                 if (url.startsWith(site(false))) return false;                // сторінки сайту — тут
                 open(url); return true;                                        // інші (мапа, Telegram) — у браузері

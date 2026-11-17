@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Плитка черги: колір — є світло чи ні; 💡 і номер черги; нижче — коротко час (до коли немає / коли відключення). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+    android:layout_margin="2dp" android:padding="3dp" android:orientation="vertical" android:gravity="center"
+    android:background="@drawable/tile_na">
+    <TextView android:id="@+id/tl1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textColor="#FFFFFFFF" android:textSize="15sp" android:textStyle="bold" android:singleLine="true" android:includeFontPadding="false" />
+    <TextView android:id="@+id/tl2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textColor="#F2FFFFFF" android:textSize="11sp" android:singleLine="true" android:includeFontPadding="false" android:layout_marginTop="2dp" />
+</LinearLayout>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Широка плитка (смужка з 2+ клітинок на одну чергу): 💡 і номер зліва, праворуч — стан і час. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tile" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+    android:layout_margin="2dp" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="3dp" android:paddingBottom="3dp"
+    android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/tile_na">
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center"
+        android:paddingRight="8dp">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="💡" android:textSize="18sp" android:includeFontPadding="false" />
+        <TextView android:id="@+id/w2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#FFFFFFFF" android:textSize="16sp" android:textStyle="bold" android:singleLine="true" android:includeFontPadding="false" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+        <TextView android:id="@+id/w3" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#FFFFFFFF" android:textSize="15sp" android:textStyle="bold" android:singleLine="true" />
+        <TextView android:id="@+id/w4" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#F2FFFFFF" android:textSize="12sp" android:maxLines="2" android:ellipsize="end" />
+    </LinearLayout>
+</LinearLayout>
