@@ -45,6 +45,7 @@ public class PreviewActivity extends Activity {
         f.onDataSetChanged();
         for (int i = 0; i < f.getCount(); i++) items.addView(f.getViewAt(i).apply(this, items));
         if (f.getCount() == 0) { TextView t = new TextView(this); t.setText("Немає карток (дані ще не завантажено?)"); t.setTextColor(0xFFFFFFFF); items.addView(t); }
+        Ui.insets(root, root.getPaddingLeft(), root.getPaddingTop(), root.getPaddingRight(), root.getPaddingBottom());
         setContentView(root);
         Log.i("SvitloPreview", "cards " + f.getCount() + " expanded " + Prefs.expanded(this, ID));
     }

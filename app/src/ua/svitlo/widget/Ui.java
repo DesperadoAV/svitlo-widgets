@@ -13,6 +13,17 @@ import android.widget.TextView;
 final class Ui {
     private Ui() {}
     static final int BG = 0xFF121212, CARD = 0xFF1E1E1E, ACCENT = 0xFFF39C12, TEXT = 0xFFE8E8E8, HINT = 0xFF9A9A9A;
+    /** Android 15+: вікно на весь екран — додаємо до відступів висоту рядка стану й кнопок унизу (на старих Android вони 0). */
+    static void insets(android.view.View v, final int l, final int t, final int r, final int b) {
+        v.setPadding(l, t, r, b);
+        if (android.os.Build.VERSION.SDK_INT < 20) return;
+        v.setOnApplyWindowInsetsListener(new android.view.View.OnApplyWindowInsetsListener() {
+            @Override public android.view.WindowInsets onApplyWindowInsets(android.view.View x, android.view.WindowInsets in) {
+                x.setPadding(l + in.getSystemWindowInsetLeft(), t + in.getSystemWindowInsetTop(), r + in.getSystemWindowInsetRight(), b + in.getSystemWindowInsetBottom());
+                return in.consumeSystemWindowInsets();
+            }
+        });
+    }
     static int dp(Activity a, float v) { return Math.round(v * a.getResources().getDisplayMetrics().density); }
     static TextView text(Activity a, ViewGroup parent, String s, float sp, int color, boolean bold) {
         TextView t = new TextView(a); t.setText(s); t.setTextSize(sp); t.setTextColor(color);

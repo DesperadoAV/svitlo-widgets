@@ -24,7 +24,7 @@ public class ConfigActivity extends Activity {
         id = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
         if (id == AppWidgetManager.INVALID_APPWIDGET_ID) { finish(); return; }
 
-        ScrollView sv = new ScrollView(this); sv.setBackgroundColor(Ui.BG);
+        ScrollView sv = new ScrollView(this); sv.setBackgroundColor(Ui.BG); Ui.insets(sv, 0, 0, 0, 0);
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
         int p = Ui.dp(this, 16); root.setPadding(p, p, p, p);
         sv.addView(root, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));

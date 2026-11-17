@@ -26,8 +26,8 @@ public class MainActivity extends Activity {
         testSite = getIntent().getStringExtra("site_url");                    // для тестів: тестовий сайт замість справжнього
 
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Ui.BG);
-        int p = Ui.dp(this, 8); root.setPadding(p, p, p, 0);
-        TextView title = Ui.text(this, root, "💡 Світло В Славутичі", 20, Ui.ACCENT, true);
+        int p = Ui.dp(this, 8); Ui.insets(root, p, p, p, 0);                  // не залазити під рядок стану (Android 15+)
+        final TextView title = Ui.text(this, root, "💡 Світло В Славутичі", 20, Ui.ACCENT, true);
         title.setPadding(Ui.dp(this, 4), 0, 0, Ui.dp(this, 4));
         title.setOnLongClickListener(new android.view.View.OnLongClickListener() { @Override public boolean onLongClick(android.view.View v) { askUrl(); return true; } });
         LinearLayout row = new LinearLayout(this); root.addView(row);
@@ -45,6 +45,11 @@ public class MainActivity extends Activity {
         });
         root.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         setContentView(root);
+        title.postDelayed(new Runnable() { @Override public void run() {   // для тестів: назва не залазить на рядок стану
+            int[] l = new int[2]; title.getLocationOnScreen(l);
+            int id = getResources().getIdentifier("status_bar_height", "dimen", "android"), sb = id > 0 ? getResources().getDimensionPixelSize(id) : 0;
+            android.util.Log.i("SvitloMain", "title_y " + l[1] + " statusbar " + sb + (l[1] >= sb ? " OK" : " OVERLAP"));
+        } }, 2000);
         web.loadUrl(site(false));
         CardsWidget.fetchAsync(this, null);
     }

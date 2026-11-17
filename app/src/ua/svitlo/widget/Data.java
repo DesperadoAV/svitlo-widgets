@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Дані про черги з сервера (бот «Світло В Славутичі», /status.json) і їх кеш у пам'яті телефона. */
 final class Data {
-    static final String DEFAULT_URL = "https://svitlo-public.a-m-vasylets.workers.dev/status.json";
+    static final String DEFAULT_URL = "https://svitlo-public.desperadoav.workers.dev/status.json";
     /** Запасне джерело (основний бот, ті самі дані) — якщо бот для мешканців недоступний. */
     static final String FALLBACK_URL = "https://svitlo51.a-m-vasylets.workers.dev/api/status";
     static final String DEFAULT_SITE = "https://svitlo51.a-m-vasylets.workers.dev/";

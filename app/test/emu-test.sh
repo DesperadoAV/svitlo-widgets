@@ -22,6 +22,7 @@ check "застосунок завантажив дані з тестового 
 sleep 3                                                        # дані збережено — далі віджет
 sleep 3; shot 01_holovnyi
 check "головний екран відкрив тестовий сайт (не справжній)" "[ \$(hits /site) -ge 1 ]"
+check "назва не залазить на рядок стану ($(A logcat -d -s SvitloMain:I | grep -o 'title_y.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'title_y.* OK'"
 A shell am start -S -W -n $PKG/.PreviewActivity >/dev/null 2>&1; sleep 4
 shot 02_vidzhet
 check "віджет: 6 карток" "A logcat -d -s SvitloPreview:I | grep -q 'cards 6'"
