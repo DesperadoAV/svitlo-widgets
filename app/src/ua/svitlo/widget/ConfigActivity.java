@@ -33,12 +33,18 @@ public class ConfigActivity extends Activity {
         list = new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); root.addView(list);
         note = Ui.text(this, root, "", 13, Ui.HINT, false);
         LinearLayout row = new LinearLayout(this); root.addView(row);
-        Ui.button(this, row, "Усі", 0xFF3A3A3A, 1).setOnClickListener(v -> { for (CheckBox x : boxes) x.setChecked(true); });
-        Ui.button(this, row, "Зберегти", 0xFF2980B9, 2).setOnClickListener(v -> save());
+        Ui.button(this, row, "Усі", 0xFF3A3A3A, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { for (CheckBox x : boxes) x.setChecked(true); } });
+        Ui.button(this, row, "Зберегти", 0xFF2980B9, 2).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { save(); } });
         Ui.text(this, root, "Порада: на віджеті натисніть на чергу — розкриється графік на сьогодні й завтра. Розмір віджета можна змінити, затиснувши його пальцем.", 13, Ui.HINT, false).setPadding(0, Ui.dp(this, 12), 0, 0);
         setContentView(sv);
         fill(Data.cached(this));
-        if (Data.cached(this) == null) new Thread(() -> { Data.fetch(this); runOnUiThread(() -> fill(Data.cached(this))); }).start();
+        if (Data.cached(this) == null) {
+            final ConfigActivity a = this;
+            new Thread(new Runnable() { @Override public void run() {
+                Data.fetch(a);
+                a.runOnUiThread(new Runnable() { @Override public void run() { fill(Data.cached(a)); } });
+            } }).start();
+        }
     }
 
     void fill(Data d) {

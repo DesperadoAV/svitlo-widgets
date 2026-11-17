@@ -28,11 +28,11 @@ public class MainActivity extends Activity {
         int p = Ui.dp(this, 8); root.setPadding(p, p, p, 0);
         TextView title = Ui.text(this, root, "💡 Світло В Славутичі", 20, Ui.ACCENT, true);
         title.setPadding(Ui.dp(this, 4), 0, 0, Ui.dp(this, 4));
-        title.setOnLongClickListener(v -> { askUrl(); return true; });
+        title.setOnLongClickListener(new android.view.View.OnLongClickListener() { @Override public boolean onLongClick(android.view.View v) { askUrl(); return true; } });
         LinearLayout row = new LinearLayout(this); root.addView(row);
-        Ui.button(this, row, "🗺 Мапа", 0xFF3A3A3A, 1).setOnClickListener(v -> open(site(true)));
-        Ui.button(this, row, "➕ Віджет", 0xFF2980B9, 1).setOnClickListener(v -> addWidget());
-        Ui.button(this, row, "↻", 0xFF3A3A3A, 0.5f).setOnClickListener(v -> { web.reload(); CardsWidget.fetchAsync(this, null); });
+        Ui.button(this, row, "🗺 Мапа", 0xFF3A3A3A, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { open(site(true)); } });
+        Ui.button(this, row, "➕ Віджет", 0xFF2980B9, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { addWidget(); } });
+        Ui.button(this, row, "↻", 0xFF3A3A3A, 0.5f).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { web.reload(); CardsWidget.fetchAsync(MainActivity.this, null); } });
         web = new WebView(this);
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
@@ -68,8 +68,8 @@ public class MainActivity extends Activity {
     void askUrl() {                                                            // приховане налаштування: адреса даних
         final EditText e = new EditText(this); e.setText(Data.url(this));
         new AlertDialog.Builder(this).setTitle("Адреса даних").setView(e)
-            .setPositiveButton("Зберегти", (d, w) -> { Data.prefs(this).edit().putString("data_url", e.getText().toString().trim()).apply(); CardsWidget.fetchAsync(this, null); })
-            .setNeutralButton("Стандартна", (d, w) -> { Data.prefs(this).edit().remove("data_url").apply(); CardsWidget.fetchAsync(this, null); })
+            .setPositiveButton("Зберегти", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) { Data.prefs(MainActivity.this).edit().putString("data_url", e.getText().toString().trim()).apply(); CardsWidget.fetchAsync(MainActivity.this, null); } })
+            .setNeutralButton("Стандартна", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) { Data.prefs(MainActivity.this).edit().remove("data_url").apply(); CardsWidget.fetchAsync(MainActivity.this, null); } })
             .setNegativeButton("Скасувати", null).show();
     }
 
