@@ -18,6 +18,16 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.10.2' }
+      - name: Firebase (google-services.json із секрету)
+        env:
+          GS: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GS" ]; then echo "::notice::Немає секрету GOOGLE_SERVICES_JSON — застосунок збереться без сповіщень"; exit 0; fi
+          printf '%s' "$GS" > app/google-services.json
+          jq -e '.client[]?.client_info.android_client_info.package_name | select(. == "ua.svitlo.widget")' app/google-services.json >/dev/null \
+            || { echo "::error::GOOGLE_SERVICES_JSON — не той файл: у Firebase додайте Android-застосунок із назвою пакета ua.svitlo.widget і завантажте його google-services.json"; exit 1; }
       - name: Збірка APK
         id: b
         env:

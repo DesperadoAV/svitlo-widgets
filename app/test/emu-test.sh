@@ -25,15 +25,28 @@ check "головний екран відкрив тестовий сайт (н�
 check "назва не залазить на рядок стану ($(A logcat -d -s SvitloMain:I | grep -o 'title_y.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'title_y.* OK'"
 A shell am start -S -W -n $PKG/.PreviewActivity >/dev/null 2>&1; sleep 4
 shot 02_vidzhet
-check "віджет: 6 карток" "A logcat -d -s SvitloPreview:I | grep -q 'cards 6'"
+check "віджет: усі 6 карток влазять ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'cards 6 shown 6 hidden 0'"
 A shell am start -S -W -n $PKG/.PreviewActivity --es toggle 3.2 >/dev/null 2>&1; sleep 4
 shot 03_rozkryto_3_2
-check "натискання на чергу 3.2 розкриває графік" "A logcat -d -s SvitloPreview:I | grep -q 'expanded \[3.2\]'"
+check "натискання на чергу 3.2 розкриває графік; щоб уліз, нижня картка ховається («ще 1») ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'shown 5 hidden 1 expanded \[3.2\]'"
 A shell am start -S -W -n $PKG/.PreviewActivity --es queues 3.2,6.1 --es toggle 6.1 >/dev/null 2>&1; sleep 4
 shot 04_lyshe_2_cherhy
-check "вибір черг: лише 2 картки" "A logcat -d -s SvitloPreview:I | grep -q 'cards 2'"
+check "вибір черг: 2 картки, обидві розкриті, із «завтра» ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'cards 2 shown 2 hidden 0 expanded \[6.1, 3.2\] tomorrow \[6.1, 3.2\]'"
+A shell am start -S -W -n $PKG/.PreviewActivity --es queues all --ei h 160 >/dev/null 2>&1; sleep 4
+shot 04b_malyi_vidzhet
+check "малий віджет: показує, що влазить, і «ще N» ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | tail -1 | grep -q 'hidden [1-9]'"
 A shell am start -W -n $PKG/.ConfigActivity --ei appWidgetId 424242 >/dev/null 2>&1; sleep 3
 shot 05_vybir_cherh
+A shell input keyevent 4; sleep 1
+# сповіщення: пробне (без Firebase — його в тестах не чіпаємо)
+[ "$API" -ge 33 ] && A shell pm grant $PKG android.permission.POST_NOTIFICATIONS >/dev/null 2>&1
+A shell am start -W -n $PKG/.NotifyActivity --ez test_notify true >/dev/null 2>&1; sleep 4
+shot 06_spovishchennia_vybir
+check "пробне сповіщення показано" "A shell dumpsys notification --noredact | grep -q 'pkg=$PKG'"
+A shell cmd statusbar expand-notifications >/dev/null 2>&1 || A shell service call statusbar 1 >/dev/null 2>&1; sleep 3
+shot 07_spovishchennia
+A shell cmd statusbar collapse >/dev/null 2>&1 || A shell service call statusbar 2 >/dev/null 2>&1; sleep 1
+ok "Firebase на цьому емуляторі: $(A logcat -d -s SvitloNotify:I | grep -o 'fcm .*' | tail -1)"
 A shell input keyevent 4; sleep 1
 before=$(hits status.json)
 A shell am broadcast -n $PKG/.CardsWidget -a ua.svitlo.widget.REFRESH >/dev/null 2>&1

@@ -3,3 +3,6 @@ app/test/out/
 app/test/hits.log
 node_modules/
 .wrangler/
+app/google-services.json
+app/build/
+app/.gradle/

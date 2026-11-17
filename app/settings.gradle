@@ -1,0 +1,8 @@
+// Застосунок-віджет «Світло В Славутичі» — збірка Gradle (потрібна для Firebase-сповіщень)
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = 'svitlo-widget'

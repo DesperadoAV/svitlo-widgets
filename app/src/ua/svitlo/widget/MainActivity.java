@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
         LinearLayout row = new LinearLayout(this); root.addView(row);
         Ui.button(this, row, "🗺 Мапа", 0xFF3A3A3A, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { open(site(true)); } });
         Ui.button(this, row, "➕ Віджет", 0xFF2980B9, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { addWidget(); } });
+        Ui.button(this, row, "🔔", 0xFF3A3A3A, 0.5f).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, NotifyActivity.class)); } });
         Ui.button(this, row, "↻", 0xFF3A3A3A, 0.5f).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { web.reload(); CardsWidget.fetchAsync(MainActivity.this, null); } });
         web = new WebView(this);
         web.getSettings().setJavaScriptEnabled(true);
@@ -52,6 +53,8 @@ public class MainActivity extends Activity {
         } }, 2000);
         web.loadUrl(site(false));
         CardsWidget.fetchAsync(this, null);
+        Notify.channels(this);
+        Notify.apply(this);                                                    // підписки на сповіщення — відновити, якщо злетіли
     }
 
     String site(boolean map) {

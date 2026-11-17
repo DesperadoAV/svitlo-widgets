@@ -68,11 +68,11 @@ final class Net {
                 SSLSocketFactory f = sslFactory(c);
                 if (f != null) ((HttpsURLConnection) con).setSSLSocketFactory(f);
             }
-            con.setConnectTimeout(15000);
-            con.setReadTimeout(15000);
+            con.setConnectTimeout(10000);
+            con.setReadTimeout(12000);
             con.setUseCaches(false);
             con.setInstanceFollowRedirects(true);
-            con.setRequestProperty("User-Agent", "SvitloWidget/" + BuildInfo.VERSION + " (Android " + Build.VERSION.RELEASE + ")");
+            con.setRequestProperty("User-Agent", "SvitloWidget/" + BuildConfig.VERSION_NAME + " (Android " + Build.VERSION.RELEASE + ")");
             con.setRequestProperty("Connection", "close");
             int code = con.getResponseCode();
             String body = null;

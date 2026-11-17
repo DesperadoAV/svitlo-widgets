@@ -1,36 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Віджет: картки додаються кодом (CardsWidget.build) — стільки, скільки влазить у розмір віджета. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/bg_widget"
-    android:padding="8dp">
+    android:padding="6dp">
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:gravity="center_vertical">
         <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:text="💡 Світло В Славутичі" android:textColor="#FFF39C12" android:textSize="15sp" android:textStyle="bold"
+            android:text="💡 Світло В Славутичі" android:textColor="#FFF39C12" android:textSize="14sp" android:textStyle="bold"
             android:singleLine="true" android:ellipsize="end" />
         <TextView android:id="@+id/updated" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:textColor="#FF8B9BB4" android:textSize="11sp" android:paddingLeft="4dp" android:paddingRight="2dp" android:singleLine="true" />
-        <TextView android:id="@+id/refresh" android:layout_width="34dp" android:layout_height="34dp" android:gravity="center"
-            android:text="↻" android:textColor="#FFFFFFFF" android:textSize="19sp" android:background="@drawable/btn" />
-        <TextView android:id="@+id/settings" android:layout_width="34dp" android:layout_height="34dp" android:gravity="center"
-            android:layout_marginLeft="4dp" android:text="⚙" android:textColor="#FFFFFFFF" android:textSize="17sp" android:background="@drawable/btn" />
+            android:textColor="#FF8B9BB4" android:textSize="11sp" android:paddingLeft="4dp" android:paddingRight="4dp" android:singleLine="true" />
+        <TextView android:id="@+id/refresh" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center"
+            android:text="↻" android:textColor="#FFFFFFFF" android:textSize="17sp" android:background="@drawable/btn" />
+        <TextView android:id="@+id/settings" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center"
+            android:layout_marginLeft="4dp" android:text="⚙" android:textColor="#FFFFFFFF" android:textSize="15sp" android:background="@drawable/btn" />
     </LinearLayout>
 
-    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="4dp">
-        <ListView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="match_parent"
-            android:divider="@null" android:dividerHeight="0dp" android:scrollbars="none" />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="2dp">
+        <LinearLayout android:id="@+id/cards" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
         <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center"
-            android:text="Завантаження…" android:textColor="#FF8B9BB4" android:textSize="14sp" />
+            android:text="Завантаження…" android:textColor="#FF8B9BB4" android:textSize="14sp" android:visibility="gone" />
     </FrameLayout>
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp">
-        <TextView android:id="@+id/map" android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:gravity="center"
-            android:text="🗺 Мапа черг" android:textColor="#FFFFFFFF" android:textSize="14sp" android:background="@drawable/btn" />
-        <TextView android:id="@+id/site" android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:gravity="center"
-            android:layout_marginLeft="6dp" android:text="🌐 Сайт" android:textColor="#FFFFFFFF" android:textSize="14sp" android:background="@drawable/btn" />
+    <TextView android:id="@+id/overflow" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
+        android:textColor="#FF8B9BB4" android:textSize="11sp" android:visibility="gone" android:paddingTop="2dp" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
+        <TextView android:id="@+id/map" android:layout_width="0dp" android:layout_height="30dp" android:layout_weight="1" android:gravity="center"
+            android:text="🗺 Мапа черг" android:textColor="#FFFFFFFF" android:textSize="13sp" android:background="@drawable/btn" />
+        <TextView android:id="@+id/site" android:layout_width="0dp" android:layout_height="30dp" android:layout_weight="1" android:gravity="center"
+            android:layout_marginLeft="6dp" android:text="🌐 Сайт" android:textColor="#FFFFFFFF" android:textSize="13sp" android:background="@drawable/btn" />
     </LinearLayout>
 </LinearLayout>

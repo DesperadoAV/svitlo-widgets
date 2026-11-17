@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="ua.svitlo.widget">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- перевірити, чи є на телефоні сервіси Google (без них Firebase-сповіщення не працюють) -->
+    <queries><package android:name="com.google.android.gms" /></queries>
 
     <application
         android:label="Світло В Славутичі"
@@ -27,6 +29,16 @@
             </intent-filter>
         </activity>
 
+        <!-- 🔔 сповіщення: вибір черг -->
+        <activity android:name=".NotifyActivity" android:exported="true" android:label="Сповіщення" />
+
+        <!-- повідомлення від бота через Firebase -->
+        <service android:name=".PushService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <!-- перегляд віджета в застосунку — для автоматичних тестів на емуляторі -->
         <activity android:name=".PreviewActivity" android:exported="true" android:label="Перегляд віджета" />
 
@@ -37,7 +49,5 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info" />
         </receiver>
 
-        <service android:name=".CardsService" android:exported="false"
-            android:permission="android.permission.BIND_REMOTEVIEWS" />
     </application>
 </manifest>
