@@ -31,8 +31,8 @@ public class PreviewActivity extends Activity {
         RemoteViews rv = CardsWidget.buildSized(this, ID, false, w, h);
         // та сама оболонка, що й на робочому столі: без неї Android не показує список карток (Android 12+)
         final android.appwidget.AppWidgetHostView host = new android.appwidget.AppWidgetHostView(this);
-        View w = rv.apply(this, host);
-        host.addView(w, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        View wv = rv.apply(this, host);
+        host.addView(wv, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(Ui.dp(this, w), Ui.dp(this, h)); lp.setMargins(pad, pad * 3, pad, pad);
         root.addView(host, lp);
         host.postDelayed(new Runnable() { @Override public void run() {   // для тестів: скільки карток справді намальовано
