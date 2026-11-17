@@ -14,6 +14,6 @@
         <TextView android:id="@+id/w3" android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:textColor="#FFFFFFFF" android:textSize="15sp" android:textStyle="bold" android:singleLine="true" />
         <TextView android:id="@+id/w4" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:textColor="#F2FFFFFF" android:textSize="12sp" android:maxLines="2" android:ellipsize="end" />
+            android:textColor="#F2FFFFFF" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:lineSpacingExtra="1dp" />
     </LinearLayout>
 </LinearLayout>

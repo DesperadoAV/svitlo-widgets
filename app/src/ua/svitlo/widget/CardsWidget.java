@@ -268,12 +268,12 @@ public class CardsWidget extends AppWidgetProvider {
         String plan;
         if (q.state == 0) {
             int e = outageEnd(dd[0], dd[1], m);
-            plan = e >= 0 ? "за графіком до " + Data.hm(e % 1440) + (e >= 1440 ? " завтра" : "") : dd[0] != null ? "позапланово" : "";
+            plan = e >= 0 ? "увімкнуть ~" + Data.hm(e % 1440) + (e >= 1440 ? " завтра" : "") : dd[0] != null ? "позапланово" : "";
         } else {
             int s = nextStart(dd[0], dd[1], m);
-            plan = s >= 0 ? "відключення " + (s >= 1440 ? "завтра " : "") + "о " + Data.hm(s % 1440) : dd[0] != null ? "відключень за графіком немає" : "";
+            plan = s >= 0 ? "відкл. " + (s >= 1440 ? "завтра " : "о ") + Data.hm(s % 1440) : dd[0] != null ? "відключень немає" : "";
         }
-        return since + (since.length() > 0 && plan.length() > 0 ? " · " : "") + plan;
+        return since + (since.length() > 0 && plan.length() > 0 ? "\n" : "") + plan;            // два короткі рядки
     }
 
     static List<Data.Q> chosen(Context c, Data d, int id) {
