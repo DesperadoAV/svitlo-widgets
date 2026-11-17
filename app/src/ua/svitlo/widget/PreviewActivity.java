@@ -30,7 +30,7 @@ public class PreviewActivity extends Activity {
         FrameLayout root = new FrameLayout(this); root.setBackgroundColor(0xFF3B4A5A);
         int pad = Ui.dp(this, 12);
         View w = LayoutInflater.from(this).inflate(R.layout.widget, root, false);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(Ui.dp(this, 340), Ui.dp(this, 540)); lp.setMargins(pad, pad * 3, pad, pad);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 540)); lp.setMargins(pad, pad * 3, pad, pad);
         root.addView(w, lp);
         Data d = Data.cached(this);
         ((TextView) w.findViewById(R.id.updated)).setText(d == null ? "немає даних" : "оновлено " + d.hm(d.fetchedAt > 0 ? d.fetchedAt : d.now));

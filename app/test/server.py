@@ -3,6 +3,7 @@ import json, sys, time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 class H(BaseHTTPRequestHandler):
     def do_GET(self):
+        open("hits.log", "a").write(time.strftime("%H:%M:%S") + " " + self.path + "\n")
         if not self.path.startswith("/status.json"):
             b = ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><body style='font:20px sans-serif;padding:20px'>"
                  "<h2>Тестовий сайт</h2><p>(справжній сайт у тестах не відкриваємо)</p>").encode()
@@ -15,6 +16,5 @@ class H(BaseHTTPRequestHandler):
                            q("4.1", "unknown", 0, None, None), q("6.1", "off", 95, [["14:00", "18:00"]], [])]}
         b = json.dumps(data, ensure_ascii=False).encode()
         self.send_response(200); self.send_header("content-type", "application/json; charset=utf-8"); self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b)
-        open("hits.log", "a").write(time.strftime("%H:%M:%S") + " " + self.path + "\n")
     def log_message(self, *a): pass
 HTTPServer(("0.0.0.0", int(sys.argv[1] if len(sys.argv) > 1 else 8765)), H).serve_forever()

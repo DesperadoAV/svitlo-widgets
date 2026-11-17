@@ -12,7 +12,7 @@ import android.widget.RemoteViews;
 
 /** Віджет на робочий стіл: картки черг (є світло чи ні, з якого часу; натиснути — графік на сьогодні й завтра). */
 public class CardsWidget extends AppWidgetProvider {
-    static final String A_REFRESH = "ua.svitlo.widget.REFRESH", A_TOGGLE = "ua.svitlo.widget.TOGGLE", EXTRA_Q = "q";
+    static final String A_REFRESH = "ua.svitlo.widget.REFRESH", A_RETRY = "ua.svitlo.widget.RETRY", A_TOGGLE = "ua.svitlo.widget.TOGGLE", EXTRA_Q = "q";
     private static final long FRESH_MS = 5 * 60000L;       // свіжі дані не перезавантажуємо частіше, ніж раз на 5 хв
 
     static int immutable() { return Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0; }
@@ -31,6 +31,8 @@ public class CardsWidget extends AppWidgetProvider {
         if (A_REFRESH.equals(a)) {
             AppWidgetManager m = AppWidgetManager.getInstance(c);
             for (int w : ids(c)) m.updateAppWidget(w, build(c, w, true));
+            fetchAsync(c, goAsync());
+        } else if (A_RETRY.equals(a)) {
             fetchAsync(c, goAsync());
         } else if (A_TOGGLE.equals(a) && id != AppWidgetManager.INVALID_APPWIDGET_ID) {
             String q = i.getStringExtra(EXTRA_Q);
@@ -53,9 +55,22 @@ public class CardsWidget extends AppWidgetProvider {
     static void fetchAsync(final Context c0, final PendingResult pr) {
         final Context c = c0.getApplicationContext();
         new Thread(new Runnable() { @Override public void run() {
-            try { Data.fetch(c); updateAll(c); } catch (Exception ignored) { }
+            try { boolean ok = Data.fetch(c); updateAll(c); retry(c, ok); } catch (Exception ignored) { }
             finally { if (pr != null) pr.finish(); }
         } }).start();
+    }
+
+    /** Не вдалося завантажити (телефон щойно увімкнувся, немає мережі) — спробуємо ще раз: через 3, 6, 12… хв, але не рідше ніж раз на 30 хв. */
+    static void retry(Context c, boolean ok) {
+        android.content.SharedPreferences p = Data.prefs(c);
+        if (ok) { p.edit().putInt("fails", 0).apply(); return; }
+        if (ids(c).length == 0) return;
+        int n = Math.min(p.getInt("fails", 0) + 1, 10);
+        p.edit().putInt("fails", n).apply();
+        long delay = Math.min(30L, 3L << Math.min(n - 1, 4)) * 60000L;
+        android.app.AlarmManager am = (android.app.AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent pi = PendingIntent.getBroadcast(c, 7, new Intent(c, CardsWidget.class).setAction(A_RETRY), PendingIntent.FLAG_UPDATE_CURRENT | immutable());
+        if (am != null) am.set(android.app.AlarmManager.RTC, System.currentTimeMillis() + delay, pi);   // без пробудження телефона
     }
 
     static RemoteViews build(Context c, int id, boolean loading) {

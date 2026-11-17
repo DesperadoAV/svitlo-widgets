@@ -16,7 +16,10 @@ A install -r "$APK" | tail -1
 check "встановлення APK (Android API $API)" "A shell pm list packages | grep -q $PKG"
 # мережа емулятора іноді піднімається не одразу — чекаємо, поки тестовий сервер стане доступним із телефона
 A shell am start -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site >/dev/null 2>&1
+# мережа емулятора після запуску буває ще не готова — тоді застосунок пробує знову (як і на справжньому телефоні); тут — кнопкою ↻
+waitfor '[ $(hits status.json) -ge 1 ]' || { A shell am broadcast -n $PKG/.CardsWidget -a ua.svitlo.widget.REFRESH >/dev/null 2>&1; true; }
 check "застосунок завантажив дані з тестового сервера" "waitfor '[ \$(hits status.json) -ge 1 ]'"
+sleep 3                                                        # дані збережено — далі віджет
 sleep 3; shot 01_holovnyi
 check "головний екран відкрив тестовий сайт (не справжній)" "[ \$(hits /site) -ge 1 ]"
 A shell am start -S -W -n $PKG/.PreviewActivity >/dev/null 2>&1; sleep 4
