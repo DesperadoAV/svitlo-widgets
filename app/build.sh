@@ -32,7 +32,14 @@ javac -nowarn -Xlint:-options -encoding UTF-8 -source 1.8 -target 1.8 -bootclass
 "$BT/zipalign" -p -f 4 out/base.apk out/aligned.apk
 
 if [ -n "${KS_B64:-}" ]; then
-  echo "$KS_B64" | base64 -d > out/release.jks; KS=out/release.jks; PASS="$KS_PASS"
+  # пробіли й переноси рядків, що могли потрапити під час копіювання з телефона, прибираємо
+  printf '%s' "$KS_B64" | tr -d '[:space:]' | base64 -d > out/release.jks; KS=out/release.jks; PASS="$(printf '%s' "${KS_PASS:-}" | tr -d '[:space:]')"
+  # перевірка без розкриття секретів: відбиток файлу ключа (має бути 1fca2fb74636…) і довжина пароля (має бути 32)
+  echo "ключ: $(sha256sum out/release.jks | cut -c1-12)…, пароль: ${#PASS} символів"
+  if ! keytool -list -keystore out/release.jks -storepass "$PASS" >/dev/null 2>&1; then
+    echo "❌ Ключ підпису не відкривається: перевірте секрети ANDROID_KS_B64 і ANDROID_KS_PASS (весь вміст файлів, без зайвого)."
+    exit 1
+  fi
 else
   echo "⚠️ Немає ключа підпису — тимчасовий (оновлення поверх не встановиться)"
   keytool -genkeypair -keystore out/tmp.jks -storepass tmppass -keypass tmppass -alias svitlo -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Svitlo test" >/dev/null 2>&1
