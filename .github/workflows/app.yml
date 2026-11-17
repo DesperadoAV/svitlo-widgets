@@ -1,0 +1,85 @@
+name: Застосунок-віджет (Android)
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', '.github/workflows/app.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      ok: ${{ steps.b.outputs.ok }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - name: Збірка APK
+        id: b
+        env:
+          KS_B64: ${{ secrets.ANDROID_KS_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KS_PASS }}
+        run: |
+          mkdir -p dist
+          if bash app/build.sh > dist/build.log 2>&1; then echo "ok=true" >> $GITHUB_OUTPUT; else echo "ok=false" >> $GITHUB_OUTPUT; cat dist/build.log; exit 0; fi
+          cat dist/build.log
+          cp app/out/svitlo-widget.apk dist/
+      - uses: actions/upload-artifact@v4
+        with: { name: apk, path: dist/ }
+
+  test:
+    needs: build
+    if: needs.build.outputs.ok == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { api: 24, target: default, arch: x86 }
+          - { api: 30, target: google_apis, arch: x86_64 }
+          - { api: 35, target: google_apis, arch: x86_64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: apk, path: apk }
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Тест на емуляторі Android API ${{ matrix.api }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save
+          disable-animations: true
+          script: bash app/test/emu-test.sh ${{ matrix.api }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: 'test-api${{ matrix.api }}', path: app/test/out/ }
+
+  publish:
+    needs: [build, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: art }
+      - name: APK і результати → гілка app-build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p pub/tests
+          cp art/apk/* pub/ 2>/dev/null || true
+          for d in art/test-api*; do [ -d "$d" ] || continue; n=$(basename $d); mkdir -p pub/tests/$n; cp $d/*.png $d/results.txt $d/crash.txt $d/logcat-app.txt pub/tests/$n/ 2>/dev/null || true; done
+          { echo "Збірка: ${{ github.sha }} · run ${{ github.run_number }}"; echo "Тести: ${{ needs.test.result }}"; for f in pub/tests/*/results.txt; do echo; echo "== $(basename $(dirname $f))"; cat $f; done; } > pub/SUMMARY.txt
+          cd pub && git init -q && git checkout -q -b app-build && git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "Застосунок-віджет: збірка ${{ github.run_number }}"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" app-build
