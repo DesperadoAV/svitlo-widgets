@@ -40,11 +40,11 @@ check "вибір черг: 2 картки, обидві розкриті, із 
 A shell am start -S -W -n $PKG/.PreviewActivity --es queues all --ei h 160 >/dev/null 2>&1; sleep 4
 shot 04b_malyi_vidzhet
 if [ "$API" -ge 31 ]; then
-  check "малий віджет (Android 12+): усі картки в списку, розкриті не згортаються ($(A logcat -d -s SvitloPreview:I | grep -o 'mode.*' | tail -1))" "A logcat -d -s SvitloPreview:I | tail -1 | grep -q 'mode list cards 6 shown 6 hidden 0 expanded \[6.1, 3.2\]'"
-  A shell input swipe 160 330 160 120 400 >/dev/null 2>&1; sleep 2
+  check "малий віджет (Android 12+): усі картки в списку, розкриті не згортаються ($(A logcat -d -s SvitloPreview:I | grep -o 'mode.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep 'cards' | tail -1 | grep -q 'mode list cards 6 shown 6 hidden 0 expanded \[6.1, 3.2\]'"
+  A shell input swipe 160 205 160 105 600 >/dev/null 2>&1; sleep 2      # гортаємо список усередині віджета (він займає верх екрана)
   shot 04c_malyi_vidzhet_hortannia
 else
-  check "малий віджет: показує, що влазить, і «ще N» ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | tail -1 | grep -q 'hidden [1-9]'"
+  check "малий віджет: показує, що влазить, і «ще N» ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep 'cards' | tail -1 | grep -q 'hidden [1-9]'"
 fi
 A shell am start -W -n $PKG/.ConfigActivity --ei appWidgetId 424242 >/dev/null 2>&1; sleep 3
 shot 05_vybir_cherh
