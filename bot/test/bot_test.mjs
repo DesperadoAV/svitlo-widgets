@@ -65,7 +65,7 @@ chk("…картку закріплено", L.some(x=>x.m==="pinChatMessage" && 
 L=await tgp(777,"привіт");
 chk("інший користувач — той самий спільний віджет (sendSharedWidget W1)", L.some(x=>x.m==="sendSharedWidget" && x.b.widget_id==="W1") && !L.some(x=>x.m==="sendWidget"));
 chk("користувачі записані", sqlite.prepare("SELECT COUNT(*) n FROM pub_users").get().n===2);
-L=await tgp(555,"/help"); chk("/help — пояснення з кнопками", L.some(x=>x.m==="sendMessage" && x.b.text.includes("Вибрати черги")));
+L=await tgp(555,"/help"); chk("/help — пояснення з кнопками", L.some(x=>x.m==="sendMessage" && x.b.text.includes("/notify") && x.b.text.includes("🔄")));
 // оновлення
 later(60000); MAIN_HITS=0; L=await cron();
 chk("щохвилинний запуск без змін — один запит до основного бота, Telegram не смикаємо", MAIN_HITS===1 && !L.some(x=>x.m==="editSharedWidgetData"), MAIN_HITS);
@@ -93,12 +93,21 @@ MAIN_FN=null;
 // віджет зник (наприклад, видалили) — створюється новий
 sqlite.prepare("UPDATE kv SET v=? WHERE k='pub:widgets'").run(JSON.stringify([{id:"Wgone",ver:1}]));
 L=await tgp(888,"/start"); chk("спільний віджет не знайдено — бот створює новий", L.some(x=>x.m==="sendWidget") && JSON.parse(sqlite.prepare("SELECT v FROM kv WHERE k='pub:widgets'").get().v).some(w=>w.id==="W2"));
-// Telegram відмовив у картці — стан черг текстом, причина записана
-WIDGET_FAIL="Bad Request: WIDGET_TEST_FAIL"; sqlite.prepare("DELETE FROM kv WHERE k='pub:widgets'").run();
-L=await tgp(4242,"/start"); const fb=L.find(x=>x.m==="sendMessage");
-chk("картку не прийнято — стан черг звичайним повідомленням із причиною", fb && fb.b.parse_mode==="HTML" && fb.b.text.includes("Черга 3.2") && fb.b.text.includes("WIDGET_TEST_FAIL") && fb.b.reply_markup, fb && fb.b.text.replace(/\n/g," | "));
-t=await (await B("/")).text(); chk("…причина видна на головній сторінці бота", t.includes("sendWidget: 400 Bad Request: WIDGET_TEST_FAIL"), t.split("\n").slice(-3).join(" | "));
-WIDGET_FAIL=null; L=await tgp(4242,"/start"); chk("…Telegram знову приймає — картка створюється", L.some(x=>x.m==="sendWidget") && !L.some(x=>x.m==="sendMessage"));
+// Telegram вимкнув картки (INPUT_MEDIA_WIDGET_NOT_ALLOWED) — стан черг повідомленням із кнопками, без технічних слів
+WIDGET_FAIL="Bad Request: INPUT_MEDIA_WIDGET_NOT_ALLOWED"; sqlite.prepare("DELETE FROM kv WHERE k='pub:widgets'").run();
+L=await tgp(4242,"/start"); let fb=L.find(x=>x.m==="sendMessage");
+const kbt=fb && fb.b.reply_markup.inline_keyboard.flat();
+chk("картки заборонені — стан усіх черг повідомленням, кнопки черг/🔄/🔔/Мапа/Сайт, закріплено", fb && fb.b.text.includes("Черга 3.2") && !/NOT_ALLOWED|не вдалося/i.test(fb.b.text) && kbt.some(k=>k.callback_data==="e:3.2") && kbt.some(k=>k.callback_data==="r") && kbt.some(k=>k.callback_data==="n") && kbt.some(k=>k.url) && L.some(x=>x.m==="pinChatMessage"), fb && fb.b.text.replace(/\n/g," | "));
+t=await (await B("/")).text(); chk("…причина видна на головній сторінці бота", t.includes("sendWidget: 400 Bad Request: INPUT_MEDIA_WIDGET_NOT_ALLOWED"), t.split("\n").slice(-2).join(" | "));
+L=await tgp(4243,"/start"); chk("…наступні /start — одразу стан, картку не пробуємо (6 год)", !L.some(x=>/Widget/.test(x.m)) && L.some(x=>x.m==="sendMessage"));
+const cbk=async(chat,data,kb)=>{ const n=log.length; await B("/tg",{method:"POST",headers:{"x-telegram-bot-api-secret-token":SEC},body:JSON.stringify({update_id:Math.random(),callback_query:{id:"c1",from:{id:chat},data,message:{chat:{id:chat},message_id:900,reply_markup:kb}}})}); return log.slice(n); };
+L=await cbk(4243,"e:3.2",fb.b.reply_markup); let ex=L.find(x=>x.m==="editMessageText");
+chk("натиснув «3.2» — розкрито: графік сьогодні/завтра, наступне відключення; кнопка ▾", ex && /Черга 3\.2<\/b>[^\n]*\n\s+сьогодні: 08:00–14:00, 20:00–24:00\n\s+завтра: 00:00–04:00/.test(ex.b.text) && /наступне відключення: 20:00|за графіком відключення до/.test(ex.b.text) && ex.b.reply_markup.inline_keyboard.flat().some(k=>k.text==="▾ 3.2"), ex && ex.b.text.replace(/\n/g," | "));
+L=await cbk(4243,"e:6.1",ex.b.reply_markup); ex=L.find(x=>x.m==="editMessageText");
+chk("…ще «6.1» — розкриті обидві", ex && ex.b.reply_markup.inline_keyboard.flat().filter(k=>/^▾/.test(k.text)).length===2);
+L=await cbk(4243,"r",ex.b.reply_markup); ex=L.find(x=>x.m==="editMessageText");
+chk("🔄 — оновлено в тому самому повідомленні, розкриті лишаються; підказка з часом", ex && ex.b.message_id===900 && ex.b.reply_markup.inline_keyboard.flat().filter(k=>/^▾/.test(k.text)).length===2 && L.some(x=>x.m==="answerCallbackQuery" && /дані на/.test(x.b.text)));
+NOW+=7*3600000; WIDGET_FAIL=null; L=await tgp(4244,"/start"); chk("через 6+ год пробує картку знову; Telegram дозволив — картка", L.some(x=>x.m==="sendWidget") && !L.some(x=>x.m==="sendMessage") && sqlite.prepare("SELECT v FROM kv WHERE k='pub:wdg_off'").get().v==="0");
 // розмір даних: багато інтервалів
 const many=[]; for(let h=0;h<24;h+=2) many.push([`${String(h).padStart(2,"0")}:00`,`${String(h).padStart(2,"0")}:30`]);
 for (const q of FAKE.queues) { q.today=many; q.tomorrow=many; }

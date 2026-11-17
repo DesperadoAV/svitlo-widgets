@@ -122,17 +122,38 @@ async function logErr(env, method, j) {
   l.push({ at: Date.now(), m: method, c: j.error_code || 0, d: String(j.description || "").slice(0, 300) });
   await kvSet(env, "pub:tgerr", JSON.stringify(l.slice(-10)));
 }
-// Стан черг звичайним текстом — коли картка (віджет) не показується, і для довідки
 const dur = ms => { const m = Math.max(0, Math.floor(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return d ? `${d} д ${h} год` : h ? `${h} год ${m % 60} хв` : `${m % 60} хв`; };
-function statusText(S) {
+// Стан черг повідомленням із кнопками (поки Telegram не дозволяє картки-віджети): натиснути чергу — розкрити графік, 🔄 — оновити
+function statusView(S, open, mine) {
   const ivs = l => l === null ? "графіка ще немає" : l.length ? l.map(([a, b]) => hm(a) + "–" + hm(b)).join(", ") : "відключень немає";
-  const rows = S.queues.map(q => {
+  const now = S.now;
+  const lines = S.queues.map(q => {
     const icon = q.state === 1 ? "🟢" : q.state === 0 ? "🔴" : "⚪️";
     const st = q.state === 1 ? "світло є" : q.state === 0 ? "світла немає" : "немає даних";
-    const since = q.state >= 0 && q.since ? ` з ${fmtTime(q.since)}${fmtDate(q.since) !== S.d0 ? " " + fmtDate(q.since).slice(0, 5) : ""} (${dur(S.now - q.since)})` : "";
-    return `${icon} <b>Черга ${q.name}</b> — ${st}${since}\n      сьогодні: ${ivs(q.today)}` + (q.tomorrow ? `\n      завтра: ${ivs(q.tomorrow)}` : "");
+    const since = q.state >= 0 && q.since ? ` з ${fmtTime(q.since)}${fmtDate(q.since) !== S.d0 ? " " + fmtDate(q.since).slice(0, 5) : ""} · ${dur(now - q.since)}` : "";
+    let t = `${icon} <b>Черга ${q.name}</b> — ${st}${since}`;
+    if (open.includes(q.name)) {
+      t += `\n      сьогодні: ${ivs(q.today)}` + (q.tomorrow ? `\n      завтра: ${ivs(q.tomorrow)}` : "");
+      const cur = inOutage(q, S, now), nx = nextOutage(q, S, now);
+      if (cur) t += `\n      ⏳ за графіком відключення до ${at(cur, S)}`;
+      else if (nx) t += `\n      ⏭ наступне відключення: ${at(nx.start, S)} (через ${dur(nx.start - now)})`;
+    }
+    return t;
   });
-  return `💡 <b>Світло В Славутичі</b> · дані на ${fmtTime(S.now)}\n\n${rows.join("\n")}`;
+  const text = `💡 <b>Світло В Славутичі</b> · дані на ${fmtTime(now)}\n\n${lines.join("\n")}\n\n<i>Натисніть на чергу — покажу графік.</i>`;
+  const qb = S.queues.map(q => ({ text: (open.includes(q.name) ? "▾ " : "▸ ") + q.name + (mine.includes(q.name) ? " 🔔" : ""), callback_data: "e:" + q.name }));
+  const rows = [];
+  for (let i = 0; i < qb.length; i += 3) rows.push(qb.slice(i, i + 3));
+  rows.push([{ text: "🔄 Оновити", callback_data: "r" }, { text: "🔔 Сповіщення", callback_data: "n" }]);
+  rows.push([{ text: "🗺 Мапа черг", url: S.map }, { text: "🌐 Сайт", url: S.site }]);
+  return { text, reply_markup: { inline_keyboard: rows } };
+}
+const myQueues = async (env, chat) => (await env.DB.prepare("SELECT queue FROM subs WHERE chat_id=?").bind(chat).all()).results.map(r => r.queue);
+async function sendStatus(env, chat, pin) {
+  const S = await snapshot(env), v = statusView(S, [], await myQueues(env, chat));
+  const r = await tg(env, "sendMessage", { chat_id: chat, parse_mode: "HTML", disable_web_page_preview: true, ...v });
+  if (pin && r.ok) { await tg(env, "unpinAllChatMessages", { chat_id: chat }); await tg(env, "pinChatMessage", { chat_id: chat, message_id: r.result.message_id, disable_notification: true }); }
+  return r;
 }
 async function secret(env) {                            // секрет вебхука — з токена, щоб нічого окремо не налаштовувати
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("svitlo-pub:" + env.BOT_TOKEN));
@@ -145,6 +166,10 @@ const keyboard = S => ({ inline_keyboard: [[{ text: "🗺 Мапа черг", ur
 async function widgets(env) { try { return JSON.parse(await kvGet(env, "pub:widgets") || "[]"); } catch (e) { return []; } }
 
 async function sendCard(env, chat) {
+  // 13.11.2026 Telegram вимкнув картки-віджети для всіх ботів. Поки так — стан черг повідомленням із кнопками;
+  // раз на 6 год пробуємо знову, і щойно Telegram дозволить — бот сам почне надсилати картки.
+  const off = +(await kvGet(env, "pub:wdg_off") || 0);
+  if (off && Date.now() - off < 6 * 3600000) return sendStatus(env, chat, true);
   const S = await snapshot(env), data = compact(S), list = await widgets(env), cur = list.find(w => w.ver === WIDGET_VER);
   let r;
   if (cur) r = await tg(env, "sendSharedWidget", { chat_id: chat, widget_id: cur.id, caption: CAPTION, reply_markup: keyboard(S) });
@@ -156,9 +181,10 @@ async function sendCard(env, chat) {
   if (r && r.ok && r.result && r.result.message_id) {   // картку — нагору чату (закріпити), щоб завжди була під рукою
     await tg(env, "unpinAllChatMessages", { chat_id: chat });
     await tg(env, "pinChatMessage", { chat_id: chat, message_id: r.result.message_id, disable_notification: true });
+    if (off) await kvSet(env, "pub:wdg_off", "0");
   } else if (r && !r.ok) {
-    await tg(env, "sendMessage", { chat_id: chat, parse_mode: "HTML", disable_web_page_preview: true, reply_markup: keyboard(S),
-      text: statusText(S) + `\n\n<i>Живу картку показати не вдалося (${esc(String(r.description || "").slice(0, 120))}). Напишіть /start пізніше — спробую ще раз.</i>` });
+    if (/NOT_ALLOWED/i.test(String(r.description || ""))) await kvSet(env, "pub:wdg_off", String(Date.now()));
+    return sendStatus(env, chat, true);
   }
   return r;
 }
@@ -169,11 +195,11 @@ async function onUpdate(env, u) {
     await env.DB.prepare("INSERT INTO pub_users(chat_id,first_ts,last_ts,n) VALUES(?,?,?,1) ON CONFLICT(chat_id) DO UPDATE SET last_ts=excluded.last_ts, n=n+1").bind(m.chat.id, now, now).run();
     const t = String(m.text || "");
     if (/^\/(notify|alerts?)\b/.test(t)) return tg(env, "sendMessage", { chat_id: m.chat.id, parse_mode: "HTML", ...(await notifyMenu(env, m.chat.id)) });
-    if (/^\/status\b/.test(t)) { const S = await snapshot(env); return tg(env, "sendMessage", { chat_id: m.chat.id, parse_mode: "HTML", disable_web_page_preview: true, text: statusText(S), reply_markup: keyboard(S) }); }
+    if (/^\/status\b/.test(t)) return sendStatus(env, m.chat.id, false);
     if (/^\/help/.test(t)) {
       const S = await snapshot(env);
       return tg(env, "sendMessage", { chat_id: m.chat.id, parse_mode: "HTML", reply_markup: keyboard(S),
-        text: "💡 <b>Світло В Славутичі</b>\n\nКартка вище показує наживо, де є світло, а де немає, і графік відключень.\n• Натисніть на чергу — розкриється графік на сьогодні й завтра.\n• «⚙️ Вибрати черги» — залиште лише свої.\n• /notify — 🔔 сповіщення: світло зникло, з'явилось і за 10 хв до планового відключення.\n• /status — стан усіх черг текстом.\n• /start — надіслати картку ще раз.\n\nСтан визначають пристрої в будинках кожної черги — це факт, а не графік." });
+        text: "💡 <b>Світло В Славутичі</b>\n\nПовідомлення зі станом черг показує, де є світло, а де немає, і графік відключень.\n• Натисніть на чергу — покажу графік на сьогодні й завтра і коли наступне відключення.\n• 🔄 — оновити стан у тому самому повідомленні.\n• /notify — 🔔 сповіщення: світло зникло, з'явилось і за 10 хв до планового відключення.\n• /status або /start — надіслати стан ще раз.\n\nСтан визначають пристрої в будинках кожної черги — це факт, а не графік." });
     }
     return sendCard(env, m.chat.id);
   }
@@ -229,6 +255,14 @@ async function onCallback(env, cq) {
   const chat = cq.message && cq.message.chat && cq.message.chat.id, d = String(cq.data || "");
   if (!chat) return tg(env, "answerCallbackQuery", { callback_query_id: cq.id });
   let note = "";
+  if (d === "r" || d.startsWith("e:")) {                // розкрити/згорнути чергу або оновити — у тому самому повідомленні
+    const kb = (cq.message.reply_markup && cq.message.reply_markup.inline_keyboard) || [];
+    const open = kb.flat().filter(b => /^▾ /.test(b.text || "") && /^e:/.test(b.callback_data || "")).map(b => b.callback_data.slice(2));
+    if (d.startsWith("e:")) { const q = d.slice(2); const i = open.indexOf(q); if (i >= 0) open.splice(i, 1); else open.push(q); }
+    const S = await snapshot(env), v = statusView(S, open, await myQueues(env, chat));
+    const e = await tg(env, "editMessageText", { chat_id: chat, message_id: cq.message.message_id, parse_mode: "HTML", disable_web_page_preview: true, ...v });
+    return tg(env, "answerCallbackQuery", { callback_query_id: cq.id, text: d === "r" ? (e.ok ? `Оновлено: дані на ${fmtTime(S.now)}` : `Без змін: дані на ${fmtTime(S.now)}`) : "" });
+  }
   if (d === "n") { await tg(env, "answerCallbackQuery", { callback_query_id: cq.id }); return tg(env, "sendMessage", { chat_id: chat, parse_mode: "HTML", ...(await notifyMenu(env, chat)) }); }
   if (d.startsWith("nq:")) {
     const q = d.slice(3).slice(0, 20);
