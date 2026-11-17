@@ -35,9 +35,9 @@ public class NotifyActivity extends Activity {
         warn.setChecked(Notify.warn(this)); warn.setPadding(Ui.dp(this, 6), Ui.dp(this, 10), 0, Ui.dp(this, 6)); root.addView(warn);
         note = Ui.text(this, root, "", 13, Ui.HINT, false);
         LinearLayout row = new LinearLayout(this); root.addView(row);
-        Ui.button(this, row, "Перевірити", 0xFF3A3A3A, 1).setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { test(); } });
+        Ui.button(this, row, "Пробне", 0xFF3A3A3A, 1).setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { test(); } });
         Ui.button(this, row, "Зберегти", 0xFF2980B9, 2).setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { save(); } });
-        Ui.text(this, root, "«Перевірити» — показати, як виглядатиме сповіщення. Сповіщення надходять миттєво, навіть коли застосунок закритий.", 13, Ui.HINT, false).setPadding(0, Ui.dp(this, 12), 0, 0);
+        Ui.text(this, root, "«Пробне» — показати, як виглядатиме сповіщення. Сповіщення надходять миттєво, навіть коли застосунок закритий.", 13, Ui.HINT, false).setPadding(0, Ui.dp(this, 12), 0, 0);
         setContentView(sv);
         fill();
         if (getIntent().getBooleanExtra("test_notify", false)) test();

@@ -12,6 +12,10 @@ hits() { grep -c "$1" hits.log 2>/dev/null || true; }
 waitfor() { for i in $(seq 1 30); do eval "$1" && return 0; sleep 2; done; return 1; }
 python3 server.py 8765 > out/server.log 2>&1 & SRV=$!
 A logcat -c
+# мережа емулятора буває не готова одразу після запуску — чекаємо до 2 хв, поки тестовий сервер стане доступним
+A shell svc wifi enable >/dev/null 2>&1; A shell svc data enable >/dev/null 2>&1
+for i in $(seq 1 40); do A shell "ping -c 1 -W 2 10.0.2.2" >/dev/null 2>&1 && break; sleep 3; done
+check "мережа емулятора працює" "A shell 'ping -c 1 -W 2 10.0.2.2' >/dev/null 2>&1"
 A install -r "$APK" | tail -1
 check "встановлення APK (Android API $API)" "A shell pm list packages | grep -q $PKG"
 # мережа емулятора іноді піднімається не одразу — чекаємо, поки тестовий сервер стане доступним із телефона
