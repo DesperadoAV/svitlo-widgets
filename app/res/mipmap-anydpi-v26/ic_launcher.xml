@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок застосунку (Android 8+): лампочка з логотипу «Світло В Славутичі» на білому тлі -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@android:color/white" />
+    <foreground android:drawable="@mipmap/ic_launcher_fg" />
+</adaptive-icon>
