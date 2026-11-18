@@ -197,7 +197,7 @@ function statusView(S, mine, offer) {
     if (q.state >= 0 && q.since) l.push(`🕓 з ${at(q.since, S)} · ${dur(now - q.since)}`);
     const cur = inOutage(q, S, now), nx = nextOutage(q, S, now);
     if (cur) l.push(`⏳ за графіком відключення до ${till(cur, S)}`);
-    if (nx) l.push((cur ? "⏭ далі за графіком:" : `⏭ наступне відключення через ${dur(nx.start - now)}:`) + `\n    ⚫ ${range(nx.start, nx.end, S)}`);
+    if (nx) l.push((cur ? "⏭ далі за графіком:" : `⏭ відключення через ${dur(nx.start - now)}:`) + `\n    ⚫ ${range(nx.start, nx.end, S)}`);
     else if (!cur) l.push(q.today === null ? "🗓 графіка ще немає" : q.tomorrow === null ? "✅ сьогодні відключень більше немає" : "✅ до кінця завтра відключень немає");
     parts.push(l.join("\n    "));
   }
