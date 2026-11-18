@@ -49,16 +49,17 @@ const subs=c=>sqlite.prepare("SELECT queue FROM subs WHERE chat_id=? ORDER BY qu
 mainHits=0; await tick(); chk("ні підписок, ні карток, ні Firebase — щохвилинний запуск не звертається до основного бота", mainHits===0, mainHits);
 
 // меню сповіщень
-let L=await msg(1001,"/notify"); const menu=L.find(x=>x.m==="sendMessage");
-chk("/notify — меню з чергами і попередженням за 10 хв", menu && menu.b.reply_markup.inline_keyboard.flat().some(k=>k.callback_data==="nq:3.2") && menu.b.reply_markup.inline_keyboard.flat().some(k=>k.callback_data==="nw"), menu && JSON.stringify(menu.b.reply_markup).slice(0,200));
+let L=await msg(1001,"/notify"); const menu=L.find(x=>x.m==="sendMessage" && x.b.reply_markup && x.b.reply_markup.inline_keyboard);
+chk("перше повідомлення людини — привітання з кнопками меню внизу екрана", L[0] && L[0].m==="sendMessage" && L[0].b.reply_markup.keyboard && L[0].b.reply_markup.is_persistent && JSON.stringify(L[0].b.reply_markup.keyboard).includes("🔔 Сповіщення"), L.map(x=>x.m).join(","));
+chk("/notify — меню з чергами, попередженням за 10 хв і графіком", menu && menu.b.reply_markup.inline_keyboard.flat().some(k=>k.callback_data==="nq:3.2") && menu.b.reply_markup.inline_keyboard.flat().some(k=>k.callback_data==="nw") && menu.b.reply_markup.inline_keyboard.flat().some(k=>k.callback_data==="ns" && k.text.startsWith("✅")), menu && JSON.stringify(menu.b.reply_markup).slice(0,200));
 L=await press(1001,"nq:3.2");
 chk("натиснув «3.2» — підписався; меню оновилось з ✅, коротке підтвердження", subs(1001)==="3.2" && L.some(x=>x.m==="answerCallbackQuery" && /3\.2.*увімкнено/.test(x.b.text)) && L.some(x=>x.m==="editMessageText" && JSON.stringify(x.b.reply_markup).includes("✅ 3.2")));
 await press(1002,"nq:3.2"); await press(1002,"nq:6.1"); L=await press(1002,"nw");
 chk("інший користувач: 3.2 і 6.1, попередження за 10 хв вимкнув", subs(1002)==="3.2,6.1" && sqlite.prepare("SELECT warn FROM notif WHERE chat_id=1002").get().warn===0 && L.some(x=>x.m==="answerCallbackQuery" && /вимкнено/.test(x.b.text)));
 await press(1003,"nq:4.1"); L=await press(1003,"nq:4.1"); chk("повторне натискання — відписка", subs(1003)==="" && L.some(x=>x.m==="answerCallbackQuery" && /вимкнено/.test(x.b.text)));
 L=await press(1001,"nd"); chk("«Готово» — підсумок замість меню", L.some(x=>x.m==="editMessageText" && x.b.text.includes("черга 3.2")));
-L=await msg(1004,"/start"); chk("у картці/стані є кнопка «🔔 Сповіщення»", L.some(x=>x.b.reply_markup && JSON.stringify(x.b.reply_markup).includes('"callback_data":"n"')));
-L=await press(1004,"n"); chk("кнопка «🔔» відкриває меню", L.some(x=>x.m==="sendMessage" && x.b.text.includes("Сповіщення про світло")));
+later(0.05); L=await msg(1004,"🔔 Сповіщення"); chk("кнопка «🔔 Сповіщення» внизу — меню сповіщень", L.some(x=>x.m==="sendMessage" && x.b.text.includes("Сповіщення про світло") && x.b.reply_markup.inline_keyboard));
+L=await press(1004,"n"); chk("кнопка «🔔» на старих повідомленнях — меню в тому самому повідомленні", L.some(x=>x.m==="editMessageText" && x.b.text.includes("Сповіщення про світло")));
 
 // перший запуск: запам'ятовує стан; 3.2 — відключення о 15:40, зараз 15:30 → попередження
 penv.FCM_SA=SA;
@@ -83,9 +84,9 @@ Object.assign(Q("4.1"),{today:[["22:00","24:00"]],tomorrow:[["00:00","02:00"]]})
 NOW=Date.parse("2026-11-17T23:00:00+02:00"); T=await tick(); chk("відключення через північ — без хибного попередження о 23:50", !T.tg.length && !T.fcm.length);
 // завтра о 00:00, а сьогодні — ні: попередження о 23:50
 Object.assign(Q("4.1"),{today:[["08:00","12:00"]],tomorrow:[["00:00","04:00"]]});
-const sub41=[]; for(let i=0;i<120;i++){ sqlite.prepare("INSERT INTO subs(chat_id,queue) VALUES(?,?)").run(5000+i,"4.1"); sub41.push(5000+i); }
+const sub41=[]; for(let i=0;i<120;i++){ sqlite.prepare("INSERT INTO subs(chat_id,queue) VALUES(?,?)").run(5000+i,"4.1"); sqlite.prepare("INSERT INTO pref(chat_id,k,v) VALUES(?,'s','0')").run(5000+i); sub41.push(5000+i); }
 NOW=Date.parse("2026-11-17T23:51:00+02:00"); T=await tick();
-chk("завтра о 00:00 — попередження о 23:51 («за 9 хв», час із датою)", T.fcm.some(x=>x.m.topic==="w_4.1" && /за 9 хв/.test(x.m.data.title) && /00:00 \(18\.11\)/.test(x.m.data.body)), T.fcm.map(x=>x.m.data.title+" "+x.m.data.body).join(" / "));
+chk("завтра о 00:00 — попередження о 23:51 («за 9 хв», час із датою)", T.fcm.some(x=>x.m.topic==="w_4.1" && /за 9 хв/.test(x.m.data.title) && x.m.data.body==="за графіком 00:00–04:00 (18.11)"), T.fcm.map(x=>x.m.data.title+" "+x.m.data.body).join(" / "));
 chk("120 підписників — усі отримали за один запуск (помічники паралельно)", new Set(T.tg.map(x=>x.b.chat_id)).size===120 && sqlite.prepare("SELECT COUNT(*) n FROM outbox").get().n===0, T.tg.length+" / у черзі "+sqlite.prepare("SELECT COUNT(*) n FROM outbox").get().n);
 // Telegram просить пригальмувати (429) — решта пізніше; заблокували бота — підписку прибрано
 BLOCKED.add(1002); Object.assign(Q("3.2"),{state:"off",since:NOW}); later(1); delete penv.SELF;
@@ -113,6 +114,33 @@ later(2); pr=await PT({token:devTok}); chk("…за 2 хв — знову мож
 let t=await (await B("/")).text(); chk("головна сторінка: кількість підписаних, Firebase налаштовано", /підписаних на сповіщення: \d+/.test(t) && t.includes("Firebase: налаштовано"), t.split("\n").slice(2,5).join(" | "));
 t=await (await B("/setup")).text(); chk("/setup перевіряє Firebase", t.includes("📲 Firebase: ✅ (проєкт svitlo-test)"), t.replace(/\n/g," | "));
 penv.FCM_SA='{"bad":1}'; t=await (await B("/setup")).text(); chk("…неправильний ключ — зрозуміла помилка", /Firebase: ❌ .*не той файл/.test(t));
-const cmds=tgl.filter(x=>x.m==="setMyCommands").pop(); chk("команди бота: start, notify, status, help; вебхук приймає кнопки", cmds && cmds.b.commands.map(c=>c.command).join(",")==="start,notify,status,help" && tgl.filter(x=>x.m==="setWebhook").pop().b.allowed_updates.includes("callback_query"));
+const cmds=tgl.filter(x=>x.m==="setMyCommands").pop(); chk("команди бота: start, status, schedule, compare, notify, queues, help; вебхук приймає кнопки", cmds && cmds.b.commands.map(c=>c.command).join(",")==="start,status,schedule,compare,notify,queues,help" && tgl.filter(x=>x.m==="setWebhook").pop().b.allowed_updates.includes("callback_query"), cmds && cmds.b.commands.map(c=>c.command).join(","));
+
+// 📅 графік з'явився / змінився — для тих, хто підписаний на черги і не вимкнув «📅»
+penv.FCM_SA=SA;
+FAKE.today="18.11.2026"; FAKE.tomorrow="19.11.2026"; for (const q of FAKE.queues) { q.today=q.tomorrow; q.tomorrow=null; }
+NOW=Date.parse("2026-11-18T19:00:00+02:00");
+let sch=[]; for(let i=0;i<3;i++){ const r=await tick(); sch.push(...r.tg.filter(x=>/графік/.test(x.b.text)), ...r.fcm.filter(x=>x.m.topic&&x.m.topic.startsWith("s_"))); later(1); }
+chk("новий день — без зайвих сповіщень про графік", sch.length===0, sch.map(x=>x.b?x.b.text:x.m.topic).join(" / "));
+await press(2001,"nq:3.2"); await press(2001,"nq:6.1"); await press(2002,"nq:3.2"); L=await press(2002,"ns"); await press(2003,"nq:6.1");
+chk("«📅 Графік на завтра і зміни» — вимкнув (кнопка ▫️)", sqlite.prepare("SELECT v FROM pref WHERE chat_id=2002 AND k='s'").get().v==="0" && L.some(x=>x.m==="answerCallbackQuery" && /не буду/.test(x.b.text)) && L.some(x=>x.m==="editMessageText" && JSON.stringify(x.b.reply_markup).includes("▫️ 📅")));
+Q("3.2").tomorrow=[["08:00","12:00"],["18:00","22:00"]]; Q("6.1").tomorrow=[];
+const run=async n=>{ const all={tg:[],fcm:[]}; for(let i=0;i<n;i++){ const r=await tick(); all.tg.push(...r.tg); all.fcm.push(...r.fcm); later(1); } return all; };
+T=await run(2); chk("графік щойно вносять — ще чекаємо (раптом зміниться)", !T.tg.some(x=>/графік/.test(x.b.text)) && !T.fcm.length);
+T=await tick(); later(1);
+const to=c=>T.tg.filter(x=>x.b.chat_id===c);
+chk("з'явився графік на завтра: 2001 — одне повідомлення про обидві черги, дані одні під одними", to(2001).length===1 && to(2001)[0].b.text.startsWith("📅 <b>З'явився графік на завтра</b> · 19.11, четвер") && to(2001)[0].b.text.includes("🏢 <b>Черга 3.2</b>\n  └ ⚫ 08:00 – 12:00\n  └ ⚫ 18:00 – 22:00\n  <i>без світла 8 год</i>") && to(2001)[0].b.text.includes("🏢 <b>Черга 6.1</b>\n  └ 💡 відключень немає"), to(2001).map(x=>x.b.text).join(" / ").replace(/\n/g," | "));
+chk("…2003 (лише 6.1) — тільки про 6.1; 2002 (вимкнув 📅) — нічого; 1001 (3.2) — про 3.2", to(2003).length===1 && !to(2003)[0].b.text.includes("3.2") && to(2002).length===0 && to(1001).length===1 && !to(1001)[0].b.text.includes("6.1"), [to(2003).length,to(2002).length,to(1001).length].join(","));
+const f32=T.fcm.find(x=>x.m.topic==="s_3.2"), f61=T.fcm.find(x=>x.m.topic==="s_6.1");
+chk("…застосунок: теми s_3.2 і s_6.1, kind=sched, назва й проміжки", T.fcm.length===2 && f32 && f32.m.data.kind==="sched" && f32.m.data.title==="📅 Черга 3.2: графік на завтра" && f32.m.data.body==="19.11: 08:00–12:00, 18:00–22:00" && f32.m.data.day==="19.11.2026" && f61 && f61.m.data.body==="19.11: відключень немає", T.fcm.map(x=>x.m.topic+" "+x.m.data.title+" "+x.m.data.body).join(" / "));
+T=await run(2); chk("…більше не повторюється", !T.tg.some(x=>/графік/.test(x.b.text)) && !T.fcm.length);
+Q("3.2").tomorrow=[["08:00","12:00"]]; T=await run(3);
+chk("графік змінився: «✏️ Змінився графік на завтра» і що було раніше", to(2001).length===1 && to(2001)[0].b.text.startsWith("✏️ <b>Змінився графік на завтра</b>") && to(2001)[0].b.text.includes("└ ⚫ 08:00 – 12:00\n  <i>без світла 4 год</i>\n  <i>було: 08:00–12:00, 18:00–22:00</i>") && to(2003).length===0, to(2001).map(x=>x.b.text).join(" / ").replace(/\n/g," | "));
+chk("…застосунок: «змінився графік»", T.fcm.length===1 && T.fcm[0].m.topic==="s_3.2" && /змінився графік на завтра/.test(T.fcm[0].m.data.title), T.fcm.map(x=>x.m.data.title).join(" / "));
+Q("6.1").tomorrow=[["10:00","11:00"]]; T=await run(1); Q("6.1").tomorrow=[]; T=await run(3);
+chk("змінили й одразу повернули як було — без сповіщень", !T.tg.some(x=>/графік/.test(x.b.text)) && !T.fcm.length, T.tg.map(x=>x.b.text).join(" / "));
+Q("3.2").today=[["20:30","21:00"]]; T=await run(3);
+chk("з'явився графік на сьогодні — теж повідомляє", to(2001).length===1 && to(2001)[0].b.text.startsWith("📅 <b>З'явився графік на сьогодні</b> · 18.11, середа") && to(2001)[0].b.text.includes("20:30 – 21:00"), to(2001).map(x=>x.b.text).join(" / ").replace(/\n/g," | "));
+chk("усе розіслано", sqlite.prepare("SELECT COUNT(*) n FROM outbox").get().n===0);
 console.log(errs.length?"\n❌ ПРОВАЛЕНО: "+errs.join("; "):"\nУСЕ ПРОЙДЕНО");
 if (errs.length) process.exit(1);

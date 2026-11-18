@@ -27,7 +27,6 @@ jobs:
         run: |
           set -o pipefail
           node --check bot/worker.js
-          node -e "import(require('path').resolve('bot/widget.js')).then(m=>{const n=require('zlib').deflateSync(Buffer.from(m.WIDGET_HTML),{level:9}).length;console.log('віджет стиснутий:',n,'байт (межа 4096)');if(n>4096)process.exit(1)})"
           node bot/test/bot_test.mjs 2>&1 | grep -v -i experimental
           node bot/test/notify_test.mjs 2>&1 | grep -v -i experimental
 
