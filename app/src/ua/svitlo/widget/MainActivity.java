@@ -17,7 +17,7 @@ import android.widget.TextView;
 
 /** Головний екран: сайт із картками черг і мапою + кнопки «Мапа» і «Додати віджет». */
 public class MainActivity extends Activity {
-    WebView web; String testSite;
+    WebView web; String testSite; android.widget.Button rf; android.widget.ProgressBar pb; int busy;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -35,13 +35,21 @@ public class MainActivity extends Activity {
         small(Ui.button(this, row, "🗓 Перетини", 0xFF3A3A3A, 1.6f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, CompareActivity.class)); } });
         small(Ui.button(this, row, "➕ Віджет", 0xFF2980B9, 1.25f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { addWidget(); } });
         small(Ui.button(this, row, "🔔", 0xFF3A3A3A, 0.55f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, NotifyActivity.class)); } });
-        small(Ui.button(this, row, "↻", 0xFF3A3A3A, 0.55f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { web.reload(); CardsWidget.fetchAsync(MainActivity.this, null); } });
+        android.widget.FrameLayout fl = new android.widget.FrameLayout(this);          // ↻ і кружечок, що крутиться поверх нього
+        LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.55f);
+        fp.setMargins(Ui.dp(this, 3), Ui.dp(this, 4), Ui.dp(this, 3), Ui.dp(this, 4)); row.addView(fl, fp);
+        rf = small(Ui.button(this, fl, "↻", 0xFF3A3A3A, 0));
+        pb = new android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleSmall); pb.setIndeterminate(true); pb.setVisibility(android.view.View.GONE);
+        if (Build.VERSION.SDK_INT >= 21) { pb.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(0xFFFFFFFF)); pb.setTranslationZ(Ui.dp(this, 8)); }
+        fl.addView(pb, new android.widget.FrameLayout.LayoutParams(Ui.dp(this, 18), Ui.dp(this, 18), android.view.Gravity.CENTER));
+        rf.setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { refresh(); } });
         web = new WebView(this);
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
         web.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView v, String url) {   // у застосунку — без підпису під картками сайту
                 v.evaluateJavascript("(function(){var e=document.querySelector('.ft');if(e)e.style.display='none';})()", null);
+                if (busy > 0) done(true);
             }
             @Override public boolean shouldOverrideUrlLoading(WebView v, String url) {
                 if (url.startsWith(site(false))) return false;                // сторінки сайту — тут
@@ -59,14 +67,39 @@ public class MainActivity extends Activity {
         CardsWidget.fetchAsync(this, null);
         Notify.channels(this);
         Notify.apply(this);                                                    // підписки на сповіщення — відновити, якщо злетіли
+        if (getIntent().getBooleanExtra("test_refresh", false)) title.postDelayed(new Runnable() { @Override public void run() { refresh(); } }, 3000);
     }
+
+    /** ↻: сайт і дані віджета — заново; значок крутиться, доки обидва не оновляться, потім на мить ✓ (або ⚠). */
+    void refresh() {
+        if (busy > 0) return;
+        busy = 2; rf.setEnabled(false); rf.setText(""); pb.setVisibility(android.view.View.VISIBLE);
+        android.util.Log.i("SvitloMain", "refresh spin");
+        web.reload();
+        new Thread(new Runnable() { @Override public void run() {
+            boolean ok = false;
+            try { ok = Data.fetch(MainActivity.this); CardsWidget.updateAll(MainActivity.this); } catch (Exception ignored) { }
+            final boolean r = ok;
+            runOnUiThread(new Runnable() { @Override public void run() { done(r); } });
+        } }).start();
+        rf.postDelayed(new Runnable() { @Override public void run() { if (busy > 0) { busy = 1; done(false); } } }, 20000);   // не крутиться вічно
+    }
+    void done(boolean ok) {
+        if (busy <= 0 || --busy > 0) { if (!ok && busy > 0) failed = true; return; }
+        pb.setVisibility(android.view.View.GONE); final boolean good = ok && !failed; failed = false;
+        rf.setText(good ? "✓" : "⚠"); rf.setTextColor(good ? 0xFF2ECC71 : 0xFFFF9F43);
+        android.util.Log.i("SvitloMain", "refresh done " + (good ? "ok" : "fail"));
+        rf.postDelayed(new Runnable() { @Override public void run() { rf.setText("↻"); rf.setTextColor(0xFFFFFFFF); rf.setEnabled(true); } }, 1200);
+    }
+    boolean failed;
 
     /** Кнопки верхнього ряду — в один рядок (на вузьких екранах текст зменшується, а не обрізається). */
     android.widget.Button small(android.widget.Button b) {
         int p = Ui.dp(this, 5); b.setPadding(p, Ui.dp(this, 9), p, Ui.dp(this, 9));
         b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
         Ui.fit(b, 14);
-        android.widget.LinearLayout.LayoutParams lp = (android.widget.LinearLayout.LayoutParams) b.getLayoutParams(); lp.setMargins(Ui.dp(this, 3), Ui.dp(this, 4), Ui.dp(this, 3), Ui.dp(this, 4));
+        if (b.getLayoutParams() instanceof android.widget.LinearLayout.LayoutParams) ((android.widget.LinearLayout.LayoutParams) b.getLayoutParams()).setMargins(Ui.dp(this, 3), Ui.dp(this, 4), Ui.dp(this, 3), Ui.dp(this, 4));
+        else ((ViewGroup.MarginLayoutParams) b.getLayoutParams()).setMargins(0, 0, 0, 0);
         return b;
     }
 

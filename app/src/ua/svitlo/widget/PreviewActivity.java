@@ -28,7 +28,7 @@ public class PreviewActivity extends Activity {
 
         FrameLayout root = new FrameLayout(this); root.setBackgroundColor(0xFF3B4A5A);
         int pad = Ui.dp(this, 12);
-        RemoteViews rv = CardsWidget.buildSized(this, ID, false, w, h);
+        RemoteViews rv = CardsWidget.buildSized(this, ID, getIntent().getBooleanExtra("loading", false), w, h);
         // та сама оболонка, що й на робочому столі: без неї Android не показує список карток (Android 12+)
         final android.appwidget.AppWidgetHostView host = new android.appwidget.AppWidgetHostView(this);
         View wv = rv.apply(this, host);
@@ -48,6 +48,8 @@ public class PreviewActivity extends Activity {
             else if (ss != null) n = ((ViewGroup) ss).getChildCount();
             else if (l != null && l.getVisibility() == View.VISIBLE) n = ((ViewGroup) l).getChildCount();
             else if (cs != null) n = ((ViewGroup) cs).getChildCount();
+            View sp = host.findViewById(R.id.spin);
+            if (sp != null) Log.i("SvitloPreview", "spin " + (sp.getVisibility() == View.VISIBLE));
             Log.i("SvitloPreview", "drawn " + n);
         } }, 2500);
         Ui.insets(root, 0, 0, 0, 0);

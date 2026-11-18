@@ -27,8 +27,16 @@ sleep 3                                                        # дані збе
 sleep 3; shot 01_holovnyi
 check "головний екран відкрив тестовий сайт (не справжній)" "[ \$(hits /site) -ge 1 ]"
 check "назва не залазить на рядок стану ($(A logcat -d -s SvitloMain:I | grep -o 'title_y.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'title_y.* OK'"
+# ↻ на головному екрані: поки оновлюється — крутиться, потім ✓
+A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site --ez test_refresh true >/dev/null 2>&1; sleep 8
+check "↻ на головному екрані: крутиться, доки оновлюється, потім ✓ ($(A logcat -d -s SvitloMain:I | grep -o 'refresh .*' | tr '\n' ' '))" "A logcat -d -s SvitloMain:I | grep -q 'refresh spin' && A logcat -d -s SvitloMain:I | grep -q 'refresh done ok'"
 A shell am start -S -W -n $PKG/.PreviewActivity >/dev/null 2>&1; sleep 4
 shot 02_vidzhet
+check "віджет: звичайний вигляд — ↻ без кружечка" "A logcat -d -s SvitloPreview:I | grep 'spin' | tail -1 | grep -q 'spin false'"
+A shell am start -S -W -n $PKG/.PreviewActivity --ez loading true >/dev/null 2>&1; sleep 4
+shot 02a_vidzhet_onovliuietsia
+check "віджет: поки оновлюється — замість ↻ крутиться кружечок" "A logcat -d -s SvitloPreview:I | grep 'spin' | tail -1 | grep -q 'spin true'"
+A shell am start -S -W -n $PKG/.PreviewActivity >/dev/null 2>&1; sleep 4
 check "віджет: картки справді намальовані ($(A logcat -d -s SvitloPreview:I | grep -o 'drawn.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -o 'drawn [0-9]*' | tail -1 | grep -q 'drawn [1-9]'"
 check "віджет: усі 6 карток влазять ($(A logcat -d -s SvitloPreview:I | grep -o 'cards.*' | tail -1))" "A logcat -d -s SvitloPreview:I | grep -q 'cards 6 shown 6 hidden 0'"
 A shell am start -S -W -n $PKG/.PreviewActivity --es toggle 3.2 >/dev/null 2>&1; sleep 4

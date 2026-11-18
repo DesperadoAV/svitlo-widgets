@@ -7,7 +7,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 
 /**
- * Смужка графіка на добу: помаранчеві відрізки — планові відключення, біла риска — «зараз», під смужкою — години 0·6·12·18·24.
+ * Смужка графіка на добу: помаранчеві відрізки — планові відключення, біла риска — «зараз»,
+ * під смужкою — риски щогодини (біля 0·6·12·18·24 — довші) і години 0·6·12·18·24.
  * Малюється в розмір, у якому її покаже віджет (ширина картки × 18 dp), — щоб цифри не розтягувались і не розмивались.
  */
 final class Bars {
@@ -21,7 +22,7 @@ final class Bars {
         Bitmap b = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        float top = 1.5f * d, bh = 6f * d, r = bh / 2;
+        float top = 1f * d, bh = 6f * d, r = bh / 2;
         RectF track = new RectF(0, top, W, top + bh);
         p.setColor(0xFF2B3A48);
         c.drawRoundRect(track, r, r, p);
@@ -34,12 +35,20 @@ final class Bars {
         p.setColor(0x44FFFFFF);                                       // ледь помітні позначки 6, 12, 18
         for (int h = 6; h < 24; h += 6) c.drawRect(h * W / 24f - 0.5f * d, top, h * W / 24f + 0.5f * d, top + bh, p);
         c.restore();
+        p.setColor(0xFF8B9BB4);                                       // риски годин: щогодини коротка, біля підписів — довша
+        float ty = top + bh + 0.6f * d;
+        for (int h = 0; h <= 24; h++) {
+            boolean big = h % 6 == 0; float tw = (big ? 1.1f : 0.8f) * d, x = Math.max(tw / 2, Math.min(W - tw / 2, h * W / 24f));
+            p.setAlpha(big ? 255 : 150);
+            c.drawRect(x - tw / 2, ty, x + tw / 2, ty + (big ? 2.4f : 1.5f) * d, p);
+        }
+        p.setAlpha(255);
         if (nowMin >= 0) { p.setColor(0xFFFFFFFF); float x = nowMin * W / 1440f; c.drawRoundRect(new RectF(x - 1.5f * d, 0, x + 1.5f * d, top + bh + 1.5f * d), d, d, p); }
         p.setColor(0xFF8B9BB4); p.setTextSize(9.5f * d);
         for (int h = 0; h <= 24; h += 6) {                            // 0 — з лівого краю, 24 — з правого, решта — по центру позначки
             String t = String.valueOf(h);
             float tw = p.measureText(t), x = h * W / 24f - tw / 2;
-            c.drawText(t, Math.max(0, Math.min(W - tw, x)), H - 1.5f * d, p);
+            c.drawText(t, Math.max(0, Math.min(W - tw, x)), H - 0.8f * d, p);
         }
         return b;
     }

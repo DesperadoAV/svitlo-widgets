@@ -394,6 +394,8 @@ public class CardsWidget extends AppWidgetProvider {
         else if (d == null) up = err != null ? "немає зв'язку" : "завантаження…";
         else up = (err != null ? "⚠ дані на " : "оновлено ") + d.hm(d.now);
         rv.setTextViewText(R.id.updated, up);
+        rv.setViewVisibility(R.id.spin, loading ? View.VISIBLE : View.GONE);           // оновлюється — крутиться значок замість ↻
+        rv.setTextViewText(R.id.refresh, loading ? "" : "↻");
         rv.setViewVisibility(R.id.empty, none ? View.VISIBLE : View.GONE);
         rv.setTextViewText(R.id.empty, d == null ? (err != null ? "Немає зв'язку з сервером.\nНатисніть ↻, щоб спробувати ще раз." : "Завантаження…") : "Немає вибраних черг — натисніть ⚙");
         Intent r = new Intent(c, CardsWidget.class).setAction(A_REFRESH).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id);
