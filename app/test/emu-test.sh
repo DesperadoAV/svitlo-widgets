@@ -55,8 +55,20 @@ tilecheck() {   # $1 — назва, $2 — параметри перегляд�
 }
 tilecheck "квадратик 1×1: 💡 і номер черги" "--es queues 3.2 --ei w 70 --ei h 70" "70x70 cols 1 rows 1 n 1 kind 0 first 3.2" 1 05a_kvadratyk
 tilecheck "смужка 2×1, одна черга: стан і час докладно" "--es queues 3.2 --ei w 150 --ei h 70" "cols 1 rows 1 n 1 kind 2" 1 05b_smuzhka_2
-tilecheck "смужка 4×1, усі черги: 4 плитки з часом" "--es queues all --ei w 300 --ei h 70" "cols 4 rows 1 n 4 kind 1" 4 05c_smuzhka_4
+tilecheck "плитки 3 черг у вузькій смужці 2×1: 2 плитки з часом" "--es queues 1.1,2.1,6.1 --ei w 160 --ei h 90" "cols 2 rows 1 n 2 kind 1" 2 05c_dvi_plytky
 tilecheck "сітка 2×2: 4 плитки" "--es queues all --ei w 150 --ei h 150" "cols 2 rows 2 n 4 kind 1" 4 05d_sitka_2x2
+tilecheck "оновлення поверх (як на робочому столі) не додає плиток: усе ще 1" "--es queues 3.2 --ei w 150 --ei h 90 --ez reapply true" "cols 1 rows 1 n 1 kind 2" 1 05e_onovlennia
+# один ряд на всю ширину — без заголовка, картка «сьогодні»; гортання до «завтра» (Android 12+)
+modecheck() {   # $1 — назва, $2 — параметри, $3 — очікуваний вигляд, $4 — намальовано (регулярний вираз), $5 — скрін
+  A shell am start -S -W -n $PKG/.PreviewActivity $2 >/dev/null 2>&1; sleep 4
+  shot "$5"
+  local got; got="$(A logcat -d -s SvitloPreview:I | grep -o 'mode .*' | tail -1); $(A logcat -d -s SvitloPreview:I | grep -o 'drawn [0-9-]*' | tail -1)"
+  check "$1 ($got)" "echo \"$got\" | grep -q '$3' && echo \"$got\" | grep -Eq 'drawn $4\$'"
+}
+if [ "$API" -ge 31 ]; then modecheck "смужка в один ряд, одна черга: сьогодні, гортанням — завтра" "--es queues 3.2 --ei w 296 --ei h 90" "mode strip 296x90 queues 1" "[12]" 06a_ryad_odna
+else modecheck "смужка в один ряд, одна черга: сьогодні" "--es queues 3.2 --ei w 296 --ei h 90" "mode strip 296x90 queues 1" "1" 06a_ryad_odna; fi
+A shell input swipe 160 120 160 60 500 >/dev/null 2>&1; sleep 2; shot 06b_ryad_hortannia
+modecheck "два ряди, одна черга: велика картка — сьогодні й завтра" "--es queues 3.2 --ei w 296 --ei h 190" "mode big 296x190 queues 1" "1" 06c_dva_riady
 check "час на плитці: світла немає → «до …», є → «відкл …» або «з …»" "A logcat -d -s SvitloPreview:I | grep 'mode tiles' | grep -q 'time «\(до\|відкл\|з\) [0-9][0-9]:[0-9][0-9]»'"
 A shell am start -W -n $PKG/.ConfigActivity --ei appWidgetId 424242 >/dev/null 2>&1; sleep 3
 shot 05_vybir_cherh

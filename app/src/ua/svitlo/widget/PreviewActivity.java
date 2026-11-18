@@ -33,12 +33,19 @@ public class PreviewActivity extends Activity {
         final android.appwidget.AppWidgetHostView host = new android.appwidget.AppWidgetHostView(this);
         View wv = rv.apply(this, host);
         host.addView(wv, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        if (getIntent().getBooleanExtra("reapply", false)) {          // як оновлення на робочому столі: ще двічі той самий вигляд поверх
+            CardsWidget.buildSized(this, ID, false, w, h).reapply(this, wv);
+            CardsWidget.buildSized(this, ID, false, w, h).reapply(this, wv);
+        }
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(Ui.dp(this, w), Ui.dp(this, h)); lp.setMargins(pad, pad * 3, pad, pad);
         root.addView(host, lp);
         host.postDelayed(new Runnable() { @Override public void run() {   // для тестів: скільки карток справді намальовано
-            View l = host.findViewById(R.id.list), cs = host.findViewById(R.id.cards), tr = host.findViewById(R.id.troot);
+            View l = host.findViewById(R.id.list), cs = host.findViewById(R.id.cards), tg = host.findViewById(R.id.tgrid),
+                 sl = host.findViewById(R.id.slist), ss = host.findViewById(R.id.sstatic);
             int n = -1;
-            if (tr != null) { n = 0; ViewGroup g = (ViewGroup) tr; for (int i = 0; i < g.getChildCount(); i++) if (g.getChildAt(i) instanceof ViewGroup) { ViewGroup r = (ViewGroup) g.getChildAt(i); for (int k = 0; k < r.getChildCount(); k++) if (r.getChildAt(k).getVisibility() == View.VISIBLE) n++; } }
+            if (tg != null) { n = 0; ViewGroup g = (ViewGroup) tg; for (int i = 0; i < g.getChildCount(); i++) if (g.getChildAt(i) instanceof ViewGroup) { ViewGroup r = (ViewGroup) g.getChildAt(i); for (int k = 0; k < r.getChildCount(); k++) if (r.getChildAt(k).getVisibility() == View.VISIBLE) n++; } }
+            else if (sl != null && sl.getVisibility() == View.VISIBLE) n = ((ViewGroup) sl).getChildCount();
+            else if (ss != null) n = ((ViewGroup) ss).getChildCount();
             else if (l != null && l.getVisibility() == View.VISIBLE) n = ((ViewGroup) l).getChildCount();
             else if (cs != null) n = ((ViewGroup) cs).getChildCount();
             Log.i("SvitloPreview", "drawn " + n);
@@ -50,7 +57,12 @@ public class PreviewActivity extends Activity {
         java.util.List<Data.Q> all = new java.util.ArrayList<>();
         java.util.List<String> s = Prefs.selected(this, ID);
         if (d != null) for (Data.Q q : d.qs) if (s == null || s.contains(q.name)) all.add(q);
-        if (CardsWidget.tiles(w, h)) {
+        int m = CardsWidget.mode(all.size(), w, h);
+        if (m == CardsWidget.M_STRIP || m == CardsWidget.M_BIG) {
+            Log.i("SvitloPreview", "mode " + CardsWidget.modeName(m) + " " + w + "x" + h + " queues " + all.size());
+            return;
+        }
+        if (m == CardsWidget.M_TILES) {
             int[] g = CardsWidget.tileGrid(all.size(), w, h);
             Log.i("SvitloPreview", "mode tiles " + w + "x" + h + " cols " + g[0] + " rows " + g[1] + " n " + g[2] + " kind " + g[3]
                 + (all.isEmpty() ? "" : " first " + all.get(0).name + " time «" + CardsWidget.tileTime(d, all.get(0), System.currentTimeMillis()) + "»"));

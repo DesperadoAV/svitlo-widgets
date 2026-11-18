@@ -169,11 +169,102 @@ public class CardsWidget extends AppWidgetProvider {
         return buildSized(c, id, loading, widthDp(c, id), heightDp(c, id));
     }
 
-    /** Вузький або низький віджет — плитки (квадратик, смужка, сітка); більший — картки. */
-    static boolean tiles(int wDp, int hDp) { return hDp < 100 || wDp < 200; }
+    /**
+     * Вигляд за розміром: один ряд на всю ширину (≥250 dp) — смужка-картка без заголовка (сьогодні; гортання — завтра);
+     * менше — кольорові плитки; два ряди й більше з однією чергою — велика картка (сьогодні й завтра); кілька черг — картки.
+     */
+    static final int M_TILES = 0, M_STRIP = 1, M_BIG = 2, M_CARDS = 3;
+    static int mode(int count, int wDp, int hDp) {
+        if (hDp < 100) return wDp >= 250 ? M_STRIP : M_TILES;
+        if (wDp < 200) return M_TILES;
+        return count == 1 ? M_BIG : M_CARDS;
+    }
+    static String modeName(int m) { return m == M_TILES ? "tiles" : m == M_STRIP ? "strip" : m == M_BIG ? "big" : listMode() ? "list" : "fit"; }
+    static boolean tiles(int wDp, int hDp) { return hDp < 100 && wDp < 250 || hDp >= 100 && wDp < 200; }
     static RemoteViews buildSized(Context c, int id, boolean loading, int wDp, int hDp) {
-        if (tiles(wDp, hDp)) return buildTiles(c, id, wDp, hDp);
+        int m = mode(chosen(c, Data.cached(c), id).size(), wDp, hDp);
+        if (m == M_TILES) return buildTiles(c, id, wDp, hDp);
+        if (m == M_STRIP) return buildStrip(c, id, wDp);
+        if (m == M_BIG) return buildBig(c, id, loading, wDp, hDp);
         return listMode() ? buildList(c, id, loading, wDp) : buildFor(c, id, loading, hDp, wDp);
+    }
+
+    // ---------- картка «один день»: смужка в один ряд і велика картка однієї черги ----------
+    static RemoteViews dayCard(Context c, Data d, Data.Q q, boolean today, boolean both, boolean big, float barW, float dens, long now) {
+        RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.item_day);
+        v.setTextViewText(R.id.name, "Черга " + q.name);
+        v.setTextViewText(R.id.status, q.state > 0 ? "Світло є" : q.state == 0 ? "Світла немає" : "Немає даних");
+        v.setTextColor(R.id.status, q.state > 0 ? 0xFF2ECC71 : q.state == 0 ? 0xFFFF6B6B : 0xFF9AA5B1);
+        v.setInt(R.id.card, "setBackgroundResource", q.state > 0 ? R.drawable.card_on : q.state == 0 ? R.drawable.card_off : R.drawable.card_na);
+        v.setTextViewText(R.id.since, q.state >= 0 && q.since > 0 ? "з " + d.hm(q.since) + (d.kyivDay(q.since) != d.kyivDay(now) ? " " + d.ddmm(q.since) : "") : "");
+        int[][][] dd = days(d, q, now);
+        int[][] a = today ? dd[0] : dd[1];
+        v.setTextViewText(R.id.t1, (today ? "Сьогодні: " : "Завтра: ") + Data.list(a));
+        v.setViewVisibility(R.id.b1, a == null ? View.GONE : View.VISIBLE);
+        if (a != null) v.setImageViewBitmap(R.id.b1, Bars.draw(a, today ? d.kyivMin(now) : -1, barW, dens));
+        boolean two = both && today && dd[1] != null;
+        v.setViewVisibility(R.id.t2, two ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(R.id.b2, two ? View.VISIBLE : View.GONE);
+        if (two) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(dd[1])); v.setImageViewBitmap(R.id.b2, Bars.draw(dd[1], -1, barW, dens)); }
+        if (big) {                                                  // одна черга на весь віджет — шрифт більший
+            int sp = android.util.TypedValue.COMPLEX_UNIT_SP;
+            v.setTextViewTextSize(R.id.name, sp, 20); v.setTextViewTextSize(R.id.since, sp, 14); v.setTextViewTextSize(R.id.status, sp, 18);
+            v.setTextViewTextSize(R.id.t1, sp, 15); v.setTextViewTextSize(R.id.t2, sp, 15);
+        }
+        return v;
+    }
+
+    /** Один ряд на всю ширину: без заголовка; спершу «сьогодні» (видно одразу), гортанням — «завтра» та інші черги. */
+    static RemoteViews buildStrip(Context c, int id, int wDp) {
+        RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.strip);
+        Data d = Data.cached(c);
+        List<Data.Q> all = chosen(c, d, id);
+        rv.setInt(R.id.sroot, "setBackgroundResource", Prefs.dark(c, id) ? R.drawable.bg_widget : 0);
+        PendingIntent open = PendingIntent.getActivity(c, id * 10 + 4, new Intent(c, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | immutable());
+        rv.setViewVisibility(R.id.sempty, all.isEmpty() ? View.VISIBLE : View.GONE);
+        rv.setOnClickPendingIntent(R.id.sempty, open);
+        rv.removeAllViews(R.id.sstatic);
+        if (d == null || all.isEmpty()) { rv.setViewVisibility(R.id.slist, View.GONE); return rv; }
+        long now = System.currentTimeMillis();
+        float barW = barWidth(c, wDp) + 8, dens = c.getResources().getDisplayMetrics().density;   // без полів заголовка
+        if (listMode()) {
+            RemoteViews.RemoteCollectionItems.Builder b = new RemoteViews.RemoteCollectionItems.Builder().setHasStableIds(true).setViewTypeCount(1);
+            for (Data.Q q : all) {
+                RemoteViews t = dayCard(c, d, q, true, false, false, barW, dens, now); t.setOnClickFillInIntent(R.id.card, new Intent());
+                b.addItem(q.name.hashCode() * 2L, t);
+                if (days(d, q, now)[1] != null) {
+                    RemoteViews m = dayCard(c, d, q, false, false, false, barW, dens, now); m.setOnClickFillInIntent(R.id.card, new Intent());
+                    b.addItem(q.name.hashCode() * 2L + 1, m);
+                }
+            }
+            rv.setRemoteAdapter(R.id.slist, b.build());
+            rv.setPendingIntentTemplate(R.id.slist, PendingIntent.getActivity(c, id * 10 + 8, new Intent(c, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE));
+            rv.setViewVisibility(R.id.slist, View.VISIBLE);
+            rv.setViewVisibility(R.id.sstatic, View.GONE);
+        } else {                                                    // Android 5–11: без гортання — перша черга, сьогодні
+            RemoteViews t = dayCard(c, d, all.get(0), true, false, false, barW, dens, now);
+            t.setOnClickPendingIntent(R.id.card, open);
+            rv.addView(R.id.sstatic, t);
+            rv.setViewVisibility(R.id.slist, View.GONE);
+        }
+        return rv;
+    }
+
+    /** Одна черга, два ряди й більше: заголовок і велика картка — сьогодні й (якщо влазить) завтра. */
+    static RemoteViews buildBig(Context c, int id, boolean loading, int wDp, int hDp) {
+        RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget);
+        Data d = Data.cached(c);
+        List<Data.Q> all = chosen(c, d, id);
+        header(c, rv, id, loading, d, all.isEmpty());
+        rv.removeAllViews(R.id.cards);
+        rv.setViewVisibility(R.id.list, View.GONE);
+        rv.setViewVisibility(R.id.overflow, View.GONE);
+        if (d == null || all.isEmpty()) return rv;
+        long now = System.currentTimeMillis();
+        RemoteViews v = dayCard(c, d, all.get(0), true, hDp >= 165, true, barWidth(c, wDp), c.getResources().getDisplayMetrics().density, now);
+        v.setOnClickPendingIntent(R.id.card, PendingIntent.getActivity(c, id * 10 + 4, new Intent(c, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | immutable()));
+        rv.addView(R.id.cards, v);
+        return rv;
     }
 
     // ---------- плитки ----------
@@ -183,7 +274,7 @@ public class CardsWidget extends AppWidgetProvider {
         int n = Math.max(1, Math.min(count, cols * rows));
         int c2 = Math.min(cols, n), r2 = (n + c2 - 1) / c2;
         float tw = (wDp - 4) / (float) c2, th = (hDp - 4) / (float) r2;
-        int kind = tw >= 130 && th >= 44 ? 2 : (n == 1 && tw < 100) || th < 50 ? 0 : 1;
+        int kind = tw >= 130 && th >= 50 ? 2 : (n == 1 && tw < 100) || th < 60 ? 0 : 1;
         return new int[]{c2, r2, n, kind};
     }
 
@@ -194,6 +285,7 @@ public class CardsWidget extends AppWidgetProvider {
         PendingIntent open = PendingIntent.getActivity(c, id * 10 + 4, new Intent(c, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | immutable());
         rv.setViewVisibility(R.id.tempty, all.isEmpty() ? View.VISIBLE : View.GONE);
         rv.setOnClickPendingIntent(R.id.tempty, open);
+        rv.removeAllViews(R.id.tgrid);                              // ⚠️ інакше при кожному оновленні додавалися б нові плитки до старих
         if (all.isEmpty()) return rv;
         int[] g = tileGrid(all.size(), wDp, hDp);
         long now = System.currentTimeMillis();
@@ -203,7 +295,7 @@ public class CardsWidget extends AppWidgetProvider {
                 if (i >= g[2]) { RemoteViews blank = new RemoteViews(c.getPackageName(), R.layout.tile); blank.setViewVisibility(R.id.tile, View.INVISIBLE); row.addView(R.id.row, blank); continue; }
                 row.addView(R.id.row, tile(c, d, all.get(i), g[3], now, open));
             }
-            rv.addView(R.id.troot, row);
+            rv.addView(R.id.tgrid, row);
         }
         return rv;
     }
@@ -217,14 +309,10 @@ public class CardsWidget extends AppWidgetProvider {
             v.setTextViewText(R.id.w3, q.state > 0 ? "Світло є" : q.state == 0 ? "Світла немає" : "Немає даних");
             v.setTextViewText(R.id.w4, tileDetail(d, q, now));
         } else {
-            v = new RemoteViews(c.getPackageName(), R.layout.tile);
-            if (kind == 0) {                                        // квадратик: 💡 над номером черги
-                v.setTextViewText(R.id.tl1, "💡"); v.setTextViewTextSize(R.id.tl1, android.util.TypedValue.COMPLEX_UNIT_SP, 18);
-                v.setTextViewText(R.id.tl2, q.name); v.setTextViewTextSize(R.id.tl2, android.util.TypedValue.COMPLEX_UNIT_SP, 15);
-            } else {
-                v.setTextViewText(R.id.tl1, "💡" + q.name);
-                v.setTextViewText(R.id.tl2, tileTime(d, q, now));
-            }
+            v = new RemoteViews(c.getPackageName(), R.layout.tile);   // 💡, номер черги і (крім квадратика) час
+            v.setTextViewText(R.id.tl1, q.name);
+            v.setViewVisibility(R.id.tl2, kind == 0 ? View.GONE : View.VISIBLE);
+            if (kind != 0) v.setTextViewText(R.id.tl2, tileTime(d, q, now));
         }
         v.setInt(R.id.tile, "setBackgroundResource", bg);
         v.setOnClickPendingIntent(R.id.tile, open);
