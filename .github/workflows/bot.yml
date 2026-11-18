@@ -29,6 +29,8 @@ jobs:
           node --check bot/worker.js
           node bot/test/bot_test.mjs 2>&1 | grep -v -i experimental
           node bot/test/notify_test.mjs 2>&1 | grep -v -i experimental
+          node bot/test/rfc8291_test.mjs
+          node bot/test/webpush_test.mjs 2>&1 | grep -v -i experimental
 
       - name: Перевірка секретів
         id: sec

@@ -10,11 +10,14 @@
 //    Нічого не закріплює.
 //  • /status.json — дані для застосунку «Світло В Славутичі» (віджет на робочий стіл Android).
 //  • Firebase — ті самі сповіщення в застосунок: теми q_<черга> (зникло/з'явилось), w_<черга> (за 10 хв), s_<черга> (графік).
+//  • Web Push — ті самі сповіщення в браузер (сайт «Світло В Славутичі»): /wp/key, /wp/sub, /wp/unsub, /wp/get, /wp/test.
 //
 // Дані бере в основного бота (svitlo51, /api/status — з версії 4.0.5) раз на хвилину, а не на кожен запит.
 // Своя база D1 (svitlo-public); до бази основного бота доступу не має.
 // Секрети в Cloudflare: BOT_TOKEN (токен бота від @BotFather), FCM_SA (ключ Firebase). Необов'язково: MAIN_URL, SITE_URL.
 // =============================================================================
+
+import { genVapid, validSub, webPush } from "./webpush.js";
 
 const MAIN = env => String(env.MAIN_URL || "https://svitlo51.a-m-vasylets.workers.dev").replace(/\/+$/, "");
 const MAP_DEFAULT = "https://desperadoav.github.io/Svitlo_in_Slavutych/";
@@ -48,6 +51,8 @@ async function init(env) {
     env.DB.prepare("CREATE TABLE IF NOT EXISTS notif (chat_id INTEGER PRIMARY KEY, warn INTEGER DEFAULT 1)"),               // попередження за 10 хв: 1 так, 0 ні
     env.DB.prepare("CREATE TABLE IF NOT EXISTS pref (chat_id INTEGER, k TEXT, v TEXT, PRIMARY KEY (chat_id, k))"),          // s — про графік (0 — ні), x — черги для перетинів, ui — версія меню
     env.DB.prepare("CREATE TABLE IF NOT EXISTS outbox (id INTEGER PRIMARY KEY AUTOINCREMENT, chat_id INTEGER, text TEXT, at INTEGER, claim INTEGER DEFAULT 0, tries INTEGER DEFAULT 0)"),   // черга сповіщень
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS wpush (id INTEGER PRIMARY KEY AUTOINCREMENT, ep TEXT UNIQUE, p256dh TEXT, auth TEXT, queues TEXT, warn INTEGER DEFAULT 1, sched INTEGER DEFAULT 1, at INTEGER)"),   // браузери: черги «,3.2,6.1,»
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS wpout (id INTEGER PRIMARY KEY AUTOINCREMENT, sid INTEGER, payload TEXT, at INTEGER, claim INTEGER DEFAULT 0, tries INTEGER DEFAULT 0)"),               // черга сповіщень у браузери
   ]);
   INIT = true;
 }
@@ -381,8 +386,8 @@ async function onCallback(env, cq) {
 async function tick(env) {
   await init(env);
   const out = {};
-  const subs = await env.DB.prepare("SELECT 1 FROM subs LIMIT 1").first();
-  const pending = await env.DB.prepare("SELECT 1 FROM outbox LIMIT 1").first();
+  const c = await env.DB.prepare("SELECT (SELECT 1 FROM subs LIMIT 1) s, (SELECT 1 FROM wpush LIMIT 1) w, (SELECT 1 FROM outbox LIMIT 1) o, (SELECT 1 FROM wpout LIMIT 1) p").first();
+  const subs = c.s || c.w, pending = c.o || c.p;
   if (subs || env.FCM_SA) {                              // нікому нічого не потрібно — основний бот не смикаємо
     const S = await snapshot(env, true);
     out.events = [...await events(env, S), ...await schedEvents(env, S)];
@@ -476,6 +481,7 @@ async function deliver(env, ev) {
     ? "INSERT INTO outbox(chat_id,text,at) SELECT s.chat_id, ?, ? FROM subs s LEFT JOIN notif n ON n.chat_id=s.chat_id WHERE s.queue=? AND COALESCE(n.warn,1)=1"
     : "INSERT INTO outbox(chat_id,text,at) SELECT chat_id, ?, ? FROM subs WHERE queue=?";
   await env.DB.prepare(sql).bind(ev.text, Date.now(), ev.q).run();
+  await webEnqueue(env, ev.kind, ev.q, { kind: ev.kind, q: ev.q, title: ev.title, body: ev.body, tag: (ev.kind === "warn" ? "w:" : "e:") + ev.q, url: "/#q=" + encodeURIComponent(ev.q), at: Date.now() });
   if (env.FCM_SA) await fcmSend(env, topic(ev.kind, ev.q), { kind: ev.kind, q: ev.q, title: ev.title, body: ev.body, at: String(Date.now()) }, ev.kind === "warn" ? "600s" : "3600s").catch(e => fcmErr(env, String(e && e.message || e)));
 }
 
@@ -519,11 +525,12 @@ function schedMsg(S, evs) {                             // одне повідо
   return out.join("\n\n");
 }
 async function deliverSched(env, S, evs) {
-  if (env.FCM_SA) for (const e of evs) {
+  for (const e of evs) {                               // застосунок (Firebase) і браузери — окремо по кожній черзі
     const l = e.day ? e.q.tomorrow : e.q.today, dw = e.day ? "завтра" : "сьогодні", dd = e.day ? S.d1 : S.d0;
-    await fcmSend(env, topic("sched", e.q.name), { kind: "sched", q: e.q.name, day: dd,
-      title: e.was === null ? `📅 Черга ${e.q.name}: графік на ${dw}` : `✏️ Черга ${e.q.name}: змінився графік на ${dw}`,
-      body: `${dd.slice(0, 5)}: ` + (l.length ? l.map(x => hm(x[0]) + "–" + hm(x[1])).join(", ") : "відключень немає"), at: String(Date.now()) }, "43200s").catch(err => fcmErr(env, String(err && err.message || err)));
+    const title = e.was === null ? `📅 Черга ${e.q.name}: графік на ${dw}` : `✏️ Черга ${e.q.name}: змінився графік на ${dw}`;
+    const body = `${dd.slice(0, 5)}: ` + (l.length ? l.map(x => hm(x[0]) + "–" + hm(x[1])).join(", ") : "відключень немає");
+    await webEnqueue(env, "sched", e.q.name, { kind: "sched", q: e.q.name, day: dd, d: e.day, title, body, tag: "s:" + e.q.name, url: "/#compare=" + encodeURIComponent(e.q.name) + "&d=" + e.day, at: Date.now() });
+    if (env.FCM_SA) await fcmSend(env, topic("sched", e.q.name), { kind: "sched", q: e.q.name, day: dd, title, body, at: String(Date.now()) }, "43200s").catch(err => fcmErr(env, String(err && err.message || err)));
   }
   // Telegram: кожному підписаному (хто не вимкнув «📅») — одне повідомлення про всі його черги; однакові тексти — одним записом
   const qn = [...new Set(evs.map(e => e.q.name))];
@@ -562,12 +569,98 @@ async function drain(env, max) {
   return { sent: done.length - gone.length, left: back.length, slow: stop };
 }
 async function drainAll(env) {
-  const r = await drain(env, 15);
-  const n = (await env.DB.prepare("SELECT COUNT(*) n FROM outbox WHERE claim < ?").bind(Date.now() - 120000).first()).n;
-  if (!n || r.slow || !env.SELF) return r.sent;
-  const k = Math.min(6, Math.ceil(n / 40)), key = await secret(env);
-  const res = await Promise.all(Array.from({ length: k }, () => env.SELF.fetch("https://svitlo-public/drain", { method: "POST", headers: { "x-drain": key } }).then(x => x.json()).catch(() => ({ sent: 0 }))));
-  return r.sent + res.reduce((a, x) => a + (x.sent || 0), 0);
+  const r = await drain(env, 15), w = await drainWeb(env, 10), t = Date.now() - 120000;
+  const c = await env.DB.prepare("SELECT (SELECT COUNT(*) FROM outbox WHERE claim < ?) n, (SELECT COUNT(*) FROM wpout WHERE claim < ?) m").bind(t, t).first();
+  if (!env.SELF) return r.sent + w.sent;
+  const calls = [], key = await secret(env);           // помічники: Telegram — до 6, браузери — до 5 (по 40 за раз; межа Cloudflare — 50 запитів на виклик)
+  if (c.n && !r.slow) for (let i = 0; i < Math.min(6, Math.ceil(c.n / 40)); i++) calls.push("/drain");
+  if (c.m && !w.slow) for (let i = 0; i < Math.min(5, Math.ceil(c.m / 40)); i++) calls.push("/drain?w=1");
+  const res = await Promise.all(calls.map(p => env.SELF.fetch("https://svitlo-public" + p, { method: "POST", headers: { "x-drain": key } }).then(x => x.json()).catch(() => ({ sent: 0 }))));
+  return r.sent + w.sent + res.reduce((a, x) => a + (x.sent || 0), 0);
+}
+
+// ------------------------- 🌐 Сповіщення в браузер (Web Push) -------------------------
+// Ключі VAPID створюються самі (раз назавжди) і лежать у базі: нічого налаштовувати не треба.
+let VAPID = null;
+async function vapid(env) {
+  if (VAPID) return VAPID;
+  let v = null; try { v = JSON.parse(await kvGet(env, "pub:vapid") || "null"); } catch (e) {}
+  if (!v) {
+    await env.DB.prepare("INSERT OR IGNORE INTO kv(k,v) VALUES('pub:vapid',?)").bind(JSON.stringify(await genVapid())).run();
+    v = JSON.parse(await kvGet(env, "pub:vapid"));      // двоє створили одночасно — лишається один ключ
+  }
+  return VAPID = v;
+}
+const wpOpts = kind => ({ ttl: kind === "warn" ? 600 : kind === "sched" ? 43200 : kind === "test" ? 300 : 3600, urgency: kind === "sched" ? "normal" : "high" });
+async function webEnqueue(env, kind, q, msg) {          // кожному браузеру, підписаному на чергу (і на цей вид)
+  const f = kind === "warn" ? " AND warn=1" : kind === "sched" ? " AND sched=1" : "";
+  await env.DB.prepare(`INSERT INTO wpout(sid,payload,at) SELECT id, ?, ? FROM wpush WHERE instr(queues, ?) > 0${f}`).bind(JSON.stringify(msg), Date.now(), "," + q + ",").run();
+}
+async function drainWeb(env, max) {
+  const now = Date.now();
+  const rows = (await env.DB.prepare("UPDATE wpout SET claim=?, tries=tries+1 WHERE id IN (SELECT id FROM wpout WHERE claim < ? ORDER BY id LIMIT ?) RETURNING id, sid, payload, tries").bind(now, now - 120000, max).all()).results;
+  if (!rows.length) return { sent: 0, left: 0 };
+  const subs = new Map((await env.DB.prepare("SELECT id, ep, p256dh, auth FROM wpush WHERE id IN (SELECT value FROM json_each(?))").bind(JSON.stringify([...new Set(rows.map(r => r.sid))])).all()).results.map(x => [x.id, x]));
+  const keys = await vapid(env), done = [], gone = [], back = [];
+  let stop = false, sent = 0;
+  for (const r of rows) {
+    const s = subs.get(r.sid);
+    if (!s) { done.push(r.id); continue; }
+    if (stop) { back.push(r.id); continue; }
+    let msg; try { msg = JSON.parse(r.payload); } catch (e) { done.push(r.id); continue; }
+    const st = await webPush(keys, { endpoint: s.ep, keys: { p256dh: s.p256dh, auth: s.auth } }, msg, wpOpts(msg.kind));
+    if (st >= 200 && st < 300) { done.push(r.id); sent++; }
+    else if (st === 404 || st === 410 || st === 403) { done.push(r.id); gone.push(s.id); }   // браузер відписався / підписка недійсна
+    else if (st === 429) { stop = true; back.push(r.id); }
+    else if (r.tries >= 3 || st === 400 || st === 413) { done.push(r.id); await wpErr(env, `${new URL(s.ep).hostname}: ${st || "немає зв'язку"}`); }
+    else back.push(r.id);
+  }
+  const ids = l => l.join(",");
+  if (done.length) await env.DB.prepare(`DELETE FROM wpout WHERE id IN (${ids(done)})`).run();
+  if (back.length) await env.DB.prepare(`UPDATE wpout SET claim=0 WHERE id IN (${ids(back)})`).run();
+  if (gone.length) { const g = ids([...new Set(gone)]); await env.DB.batch([env.DB.prepare(`DELETE FROM wpush WHERE id IN (${g})`), env.DB.prepare(`DELETE FROM wpout WHERE sid IN (${g})`)]); }
+  return { sent, left: back.length, slow: stop };
+}
+async function wpErr(env, d) {
+  let l = []; try { l = JSON.parse(await kvGet(env, "pub:wperr") || "[]"); } catch (e) {}
+  l.push({ at: Date.now(), d: String(d).slice(0, 300) });
+  await kvSet(env, "pub:wperr", JSON.stringify(l.slice(-10)));
+}
+// Сайт (інша адреса) звертається сюди з браузера — тому дозволяємо запити з будь-якого сайту (CORS)
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type", "access-control-max-age": "86400" };
+async function webApi(req, env, p) {
+  const J = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { ...CORS, "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+  await init(env);
+  if (p === "/wp/key") return J({ key: (await vapid(env)).pub });
+  if (req.method !== "POST") return J({ ok: false, error: "потрібен POST" }, 405);
+  const b = await req.json().catch(() => ({})), sub = b && b.sub || {}, ep = String(sub.endpoint || b.endpoint || "");
+  const row = () => env.DB.prepare("SELECT * FROM wpush WHERE ep=?").bind(ep).first();
+  if (p === "/wp/sub") {                                // увімкнути / змінити: черги, ⏰ за 10 хв, 📅 графік
+    if (!validSub(sub)) return J({ ok: false, error: "браузер надіслав незрозумілу підписку" }, 400);
+    let S = null; try { S = await snapshot(env); } catch (e) {}
+    const qs = [...new Set((Array.isArray(b.queues) ? b.queues : []).map(String))].filter(q => S ? names(S).includes(q) : /^[\w.\-]{1,20}$/.test(q)).slice(0, 40);
+    if (!qs.length) { await env.DB.prepare("DELETE FROM wpush WHERE ep=?").bind(ep).run(); return J({ ok: true, queues: [] }); }
+    if (!(await row()) && (await env.DB.prepare("SELECT COUNT(*) n FROM wpush").first()).n >= 20000) return J({ ok: false, error: "забагато підписок — спробуйте пізніше" }, 503);
+    await env.DB.prepare("INSERT INTO wpush(ep,p256dh,auth,queues,warn,sched,at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(ep) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth, queues=excluded.queues, warn=excluded.warn, sched=excluded.sched, at=excluded.at")
+      .bind(ep, sub.keys.p256dh, sub.keys.auth, "," + qs.join(",") + ",", b.warn === false ? 0 : 1, b.sched === false ? 0 : 1, Date.now()).run();
+    return J({ ok: true, queues: qs, warn: b.warn !== false, sched: b.sched !== false });
+  }
+  if (p === "/wp/unsub") { await env.DB.prepare("DELETE FROM wpush WHERE ep=?").bind(ep).run(); return J({ ok: true }); }
+  if (p === "/wp/get") { const r = await row(); return J(r ? { ok: true, queues: r.queues.split(",").filter(Boolean), warn: !!r.warn, sched: !!r.sched } : { ok: false }); }
+  if (p === "/wp/test") {                               // «Пробне» — одразу на цей браузер, не частіше разу на хвилину
+    const r = await row();
+    if (!r) return J({ ok: false, error: "спершу увімкніть сповіщення" });
+    const k = "wt:" + r.id, last = +(await kvGet(env, k)) || 0, hk = "wt:h:" + Math.floor(Date.now() / 3600000), hn = +(await kvGet(env, hk)) || 0;
+    if (Date.now() - last < 60000) return J({ ok: false, error: "зачекайте хвилину" });
+    if (hn >= 300) return J({ ok: false, error: "забагато перевірок, спробуйте пізніше" });
+    await kvSet(env, k, String(Date.now())); await kvSet(env, hk, String(hn + 1));
+    const st = await webPush(await vapid(env), { endpoint: r.ep, keys: { p256dh: r.p256dh, auth: r.auth } },
+      { kind: "test", q: "", title: "🧪 Сповіщення працюють", body: "Так приходитиме повідомлення, коли у ваших чергах зникне чи з'явиться світло.", tag: "test", url: "/#notify", at: Date.now() }, wpOpts("test"));
+    if (st === 404 || st === 410 || st === 403) { await env.DB.prepare("DELETE FROM wpush WHERE id=?").bind(r.id).run(); return J({ ok: false, gone: true, error: "браузер відкликав дозвіл — увімкніть сповіщення ще раз" }); }
+    return J(st >= 200 && st < 300 ? { ok: true } : { ok: false, error: st ? "служба доставки браузера відповіла " + st : "немає зв'язку зі службою доставки" });
+  }
+  return J({ ok: false, error: "невідомий запит" }, 404);
 }
 
 // Firebase Cloud Messaging (застосунок на телефоні): ключ сервісного акаунта — секрет FCM_SA (JSON)
@@ -639,6 +732,7 @@ async function setup(env, origin) {
   if (S) out.push(`📊 Дані з основного бота (${MAIN(env)}): черг ${S.queues.length}`);
   if (env.FCM_SA) { try { await fcmToken(env, true); out.push(`📲 Firebase: ✅ (проєкт ${JSON.parse(env.FCM_SA).project_id})`); } catch (e) { out.push("📲 Firebase: ❌ " + (e && e.message || e)); } }
   else out.push("📲 Firebase: ще не налаштовано (секрет FCM_SA) — сповіщення лише в Telegram");
+  try { out.push(`🌐 Сповіщення в браузері (сайт): ✅ ключ ${(await vapid(env)).pub.slice(0, 12)}…`); } catch (e) { out.push("🌐 Сповіщення в браузері: ❌ " + (e && e.message || e)); }
   out.push("Далі: відкрийте бота в Telegram і натисніть «Почати» — бот попросить обрати черги.");
   return out.join("\n");
 }
@@ -667,8 +761,9 @@ export default {
       if (p === "/drain" && req.method === "POST") {                 // помічник розсилки (виклик самого себе, щоб розіслати швидше)
         await init(env);
         if (req.headers.get("x-drain") !== await secret(env)) return new Response("forbidden", { status: 403 });
-        return new Response(JSON.stringify(await drain(env, 40)), { headers: { "content-type": "application/json" } });
+        return new Response(JSON.stringify(u.searchParams.get("w") ? await drainWeb(env, 40) : await drain(env, 40)), { headers: { "content-type": "application/json" } });
       }
+      if (p.startsWith("/wp/")) return await webApi(req, env, p);
       if (p === "/setup") return new Response(await setup(env, u.origin), { headers: { "content-type": "text/plain; charset=utf-8" } });
       await init(env);
       let sn = null; try { sn = JSON.parse(await kvGet(env, "pub:snap") || "null"); } catch (e) {}
@@ -676,8 +771,10 @@ export default {
       let errs = []; try { errs = JSON.parse(await kvGet(env, "pub:tgerr") || "[]"); } catch (e) {}
       const el = errs.length ? "\n\nОстанні помилки Telegram:\n" + errs.slice().reverse().map(e => `${fmtDate(e.at)} ${fmtTime(e.at)}  ${e.m}: ${e.c} ${e.d}`).join("\n") : "";
       let fe = []; try { fe = JSON.parse(await kvGet(env, "pub:fcmerr") || "[]"); } catch (e) {}
-      const ns = await env.DB.prepare("SELECT (SELECT COUNT(DISTINCT chat_id) FROM subs) s, (SELECT COUNT(DISTINCT chat_id) FROM myq) m, (SELECT COUNT(*) FROM outbox) o, (SELECT COUNT(*) FROM pub_users) u").first();
-      const fl = `\nКористувачів: ${ns.u}; обрали свої черги: ${ns.m}; підписаних на сповіщення: ${ns.s}; у черзі на надсилання: ${ns.o}\nFirebase: ${env.FCM_SA ? "налаштовано" : "не налаштовано"}` + (fe.length ? "\nОстанні помилки Firebase:\n" + fe.slice().reverse().map(e => `${fmtDate(e.at)} ${fmtTime(e.at)}  ${e.d}`).join("\n") : "");
+      let we = []; try { we = JSON.parse(await kvGet(env, "pub:wperr") || "[]"); } catch (e) {}
+      const ns = await env.DB.prepare("SELECT (SELECT COUNT(DISTINCT chat_id) FROM subs) s, (SELECT COUNT(DISTINCT chat_id) FROM myq) m, (SELECT COUNT(*) FROM outbox) o, (SELECT COUNT(*) FROM pub_users) u, (SELECT COUNT(*) FROM wpush) w, (SELECT COUNT(*) FROM wpout) wo").first();
+      const fl = `\nКористувачів: ${ns.u}; обрали свої черги: ${ns.m}; підписаних на сповіщення: ${ns.s}; у черзі на надсилання: ${ns.o}\nFirebase: ${env.FCM_SA ? "налаштовано" : "не налаштовано"}` + (fe.length ? "\nОстанні помилки Firebase:\n" + fe.slice().reverse().map(e => `${fmtDate(e.at)} ${fmtTime(e.at)}  ${e.d}`).join("\n") : "") +
+        `\nСповіщення в браузері (сайт): підписано ${ns.w}; у черзі ${ns.wo}` + (we.length ? "\nОстанні помилки браузерних сповіщень:\n" + we.slice().reverse().map(e => `${fmtDate(e.at)} ${fmtTime(e.at)}  ${e.d}`).join("\n") : "");
       return new Response(`💡 Світло В Славутичі — бот для мешканців працює.\nДжерело: ${MAIN(env)}/api/status — ${st}\nДані для застосунку: /status.json\nНалаштування бота: /setup${fl}${el}`, { headers: { "content-type": "text/plain; charset=utf-8" } });
     } catch (e) {
       return new Response("Помилка: " + (e && e.message || e), { status: 500 });
