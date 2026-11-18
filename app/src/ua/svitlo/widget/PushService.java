@@ -11,11 +11,8 @@ public class PushService extends FirebaseMessagingService {
         Map<String, String> d = m.getData();
         String kind = d.get("kind"), q = d.get("q"), title = d.get("title"), body = d.get("body");
         if (title == null && m.getNotification() != null) { title = m.getNotification().getTitle(); body = m.getNotification().getBody(); }
-        if (title == null) return;
-        if (q != null && !q.isEmpty() && !Notify.queues(this).contains(q)) return;   // відписались, а повідомлення ще йшло
-        if ("warn".equals(kind) && !Notify.warn(this)) return;
-        Notify.show(this, kind, q == null ? "" : q, title, body == null ? "" : body);
-        try { Data.fetch(this); CardsWidget.updateAll(this); } catch (Exception ignored) { }   // віджет — одразу зі свіжим станом
+        if (!Notify.handle(this, kind, q, title, body)) return;
+        try { Data.fetch(this); CardsWidget.updateAll(this); } catch (Exception ignored) { }   // віджет — одразу зі свіжим станом (і графіком)
     }
 
     @Override public void onNewToken(String token) { Notify.apply(this); }

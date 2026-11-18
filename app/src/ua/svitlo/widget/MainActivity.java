@@ -31,10 +31,11 @@ public class MainActivity extends Activity {
         title.setPadding(Ui.dp(this, 4), 0, 0, Ui.dp(this, 4));
         title.setOnLongClickListener(new android.view.View.OnLongClickListener() { @Override public boolean onLongClick(android.view.View v) { askUrl(); return true; } });
         LinearLayout row = new LinearLayout(this); root.addView(row);
-        Ui.button(this, row, "🗺 Мапа", 0xFF3A3A3A, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { open(site(true)); } });
-        Ui.button(this, row, "➕ Віджет", 0xFF2980B9, 1).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { addWidget(); } });
-        Ui.button(this, row, "🔔", 0xFF3A3A3A, 0.5f).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, NotifyActivity.class)); } });
-        Ui.button(this, row, "↻", 0xFF3A3A3A, 0.5f).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { web.reload(); CardsWidget.fetchAsync(MainActivity.this, null); } });
+        small(Ui.button(this, row, "🗺 Мапа", 0xFF3A3A3A, 1)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { open(site(true)); } });
+        small(Ui.button(this, row, "🗓 Перетини", 0xFF3A3A3A, 1.6f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, CompareActivity.class)); } });
+        small(Ui.button(this, row, "➕ Віджет", 0xFF2980B9, 1.25f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { addWidget(); } });
+        small(Ui.button(this, row, "🔔", 0xFF3A3A3A, 0.55f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, NotifyActivity.class)); } });
+        small(Ui.button(this, row, "↻", 0xFF3A3A3A, 0.55f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { web.reload(); CardsWidget.fetchAsync(MainActivity.this, null); } });
         web = new WebView(this);
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
@@ -58,6 +59,15 @@ public class MainActivity extends Activity {
         CardsWidget.fetchAsync(this, null);
         Notify.channels(this);
         Notify.apply(this);                                                    // підписки на сповіщення — відновити, якщо злетіли
+    }
+
+    /** Кнопки верхнього ряду — дрібніші й в один рядок (на вузьких екранах текст зменшується сам, Android 8+). */
+    android.widget.Button small(android.widget.Button b) {
+        b.setTextSize(14); b.setSingleLine(true); int p = Ui.dp(this, 6); b.setPadding(p, Ui.dp(this, 9), p, Ui.dp(this, 9));
+        if (Build.VERSION.SDK_INT >= 26) b.setAutoSizeTextTypeUniformWithConfiguration(9, 14, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
+        b.setMinWidth(0); b.setMinimumWidth(0);
+        android.widget.LinearLayout.LayoutParams lp = (android.widget.LinearLayout.LayoutParams) b.getLayoutParams(); lp.setMargins(Ui.dp(this, 3), Ui.dp(this, 4), Ui.dp(this, 3), Ui.dp(this, 4));
+        return b;
     }
 
     String site(boolean map) {

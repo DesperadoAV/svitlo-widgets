@@ -29,6 +29,9 @@
             </intent-filter>
         </activity>
 
+        <!-- 🗓 перетини черг (і екран графіка зі сповіщення «з'явився графік») -->
+        <activity android:name=".CompareActivity" android:exported="true" android:label="Перетини" />
+
         <!-- 🔔 сповіщення: вибір черг -->
         <activity android:name=".NotifyActivity" android:exported="true" android:label="Сповіщення" />
 

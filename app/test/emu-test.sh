@@ -83,6 +83,28 @@ shot 07_spovishchennia
 A shell cmd statusbar collapse >/dev/null 2>&1 || A shell service call statusbar 2 >/dev/null 2>&1; sleep 1
 ok "Firebase на цьому емуляторі: $(A logcat -d -s SvitloNotify:I | grep -o 'fcm .*' | tail -1)"
 A shell input keyevent 4; sleep 1
+# 📅 сповіщення «з'явився графік» — так, ніби прийшло від сервера (Firebase і справжній бот не чіпаємо)
+A logcat -c
+A shell "am start -S -W -n $PKG/.NotifyActivity --es test_queues 3.2 --es test_push 'sched|3.2|Sched 3.2 test|19.11 08:00-12:00'" >/dev/null 2>&1; sleep 3
+check "графік на завтра: сповіщення показано (окремий канал «Графік відключень»)" "A logcat -d -s SvitloNotify:I | grep -q 'shown sched 3.2' && A shell dumpsys notification --noredact | grep -q 'Sched 3.2 test'"
+A shell "am start -S -W -n $PKG/.NotifyActivity --es test_queues 3.2 --es test_push 'sched|6.1|Sched 6.1 test|x'" >/dev/null 2>&1; sleep 2
+check "…для невибраної черги — не показує" "A logcat -d -s SvitloNotify:I | grep -q 'skip sched 6.1'"
+A shell "am start -S -W -n $PKG/.NotifyActivity --es test_queues 3.2 --ez test_nosched true --es test_push 'sched|3.2|Sched off test|x'" >/dev/null 2>&1; sleep 2
+shot 08_spovishchennia_hrafik
+check "…галочку «📅 Графік на завтра» знято — не показує" "A logcat -d -s SvitloNotify:I | grep -q 'skip sched 3.2'"
+A shell input keyevent 4; sleep 1
+# 🗓 перетини: смужки черг одна під одною і відрізки дня
+cmpcheck() {   # $1 — назва, $2 — параметри, $3 — очікуваний підсумок, $4 — скрін
+  A shell am start -S -W -n $PKG/.CompareActivity $2 >/dev/null 2>&1; sleep 3
+  shot "$4"
+  local got; got="$(A logcat -d -s SvitloCompare:I | grep -o 'compare .*' | tail -1)"
+  check "$1 ($got)" "echo \"$got\" | grep -qF '$3'"
+}
+cmpcheck "перетини 3.2 і 6.1 на сьогодні: 6 відрізків, «ніде немає» — жодного" "--es queues 3.2,6.1 --ei day 0" "compare d0 [3.2, 6.1] segs 6 alloff 0 known 2" 09a_peretyny_sohodni
+cmpcheck "…на завтра: 4 відрізки" "--es queues 3.2,6.1 --ei day 1" "compare d1 [3.2, 6.1] segs 4 alloff 0 known 2" 09b_peretyny_zavtra
+cmpcheck "2.1 і 6.1 сьогодні: 14:00–18:00 — немає світла ніде" "--es queues 2.1,6.1 --ei day 0" "compare d0 [2.1, 6.1] segs 3 alloff 1 known 2" 09c_peretyny_nide
+cmpcheck "…завтра в 2.1 графіка ще немає — порівнюємо те, що є" "--es queues 2.1,6.1 --ei day 1" "compare d1 [2.1, 6.1] segs 1 alloff 0 known 1" 09d_bez_hrafika
+A shell input keyevent 4; sleep 1
 before=$(hits status.json)
 A shell am broadcast -n $PKG/.CardsWidget -a ua.svitlo.widget.REFRESH >/dev/null 2>&1
 check "кнопка ↻: дані завантажено ще раз" "waitfor '[ \$(hits status.json) -gt $before ]'"
