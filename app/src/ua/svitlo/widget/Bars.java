@@ -36,15 +36,15 @@ final class Bars {
         for (int h = 6; h < 24; h += 6) c.drawRect(h * W / 24f - 0.5f * d, top, h * W / 24f + 0.5f * d, top + bh, p);
         c.restore();
         p.setColor(0xFF8B9BB4);                                       // риски годин: щогодини коротка, біля підписів — довша
-        float ty = top + bh + 0.6f * d;
+        float ty = top + bh + 0.4f * d;
         for (int h = 0; h <= 24; h++) {
             boolean big = h % 6 == 0; float tw = (big ? 1.1f : 0.8f) * d, x = Math.max(tw / 2, Math.min(W - tw / 2, h * W / 24f));
             p.setAlpha(big ? 255 : 150);
-            c.drawRect(x - tw / 2, ty, x + tw / 2, ty + (big ? 2.4f : 1.5f) * d, p);
+            c.drawRect(x - tw / 2, ty, x + tw / 2, ty + (big ? 2.3f : 1.6f) * d, p);   // не торкаються цифр
         }
         p.setAlpha(255);
         if (nowMin >= 0) { p.setColor(0xFFFFFFFF); float x = nowMin * W / 1440f; c.drawRoundRect(new RectF(x - 1.5f * d, 0, x + 1.5f * d, top + bh + 1.5f * d), d, d, p); }
-        p.setColor(0xFF8B9BB4); p.setTextSize(9.5f * d);
+        p.setColor(0xFF8B9BB4); p.setTextSize(9f * d);
         for (int h = 0; h <= 24; h += 6) {                            // 0 — з лівого краю, 24 — з правого, решта — по центру позначки
             String t = String.valueOf(h);
             float tw = p.measureText(t), x = h * W / 24f - tw / 2;
