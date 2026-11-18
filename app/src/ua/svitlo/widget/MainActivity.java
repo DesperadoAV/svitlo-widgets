@@ -61,11 +61,11 @@ public class MainActivity extends Activity {
         Notify.apply(this);                                                    // підписки на сповіщення — відновити, якщо злетіли
     }
 
-    /** Кнопки верхнього ряду — дрібніші й в один рядок (на вузьких екранах текст зменшується сам, Android 8+). */
+    /** Кнопки верхнього ряду — в один рядок (на вузьких екранах текст зменшується, а не обрізається). */
     android.widget.Button small(android.widget.Button b) {
-        b.setTextSize(14); b.setSingleLine(true); int p = Ui.dp(this, 6); b.setPadding(p, Ui.dp(this, 9), p, Ui.dp(this, 9));
-        if (Build.VERSION.SDK_INT >= 26) b.setAutoSizeTextTypeUniformWithConfiguration(9, 14, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
-        b.setMinWidth(0); b.setMinimumWidth(0);
+        int p = Ui.dp(this, 5); b.setPadding(p, Ui.dp(this, 9), p, Ui.dp(this, 9));
+        b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
+        Ui.fit(b, 14);
         android.widget.LinearLayout.LayoutParams lp = (android.widget.LinearLayout.LayoutParams) b.getLayoutParams(); lp.setMargins(Ui.dp(this, 3), Ui.dp(this, 4), Ui.dp(this, 3), Ui.dp(this, 4));
         return b;
     }

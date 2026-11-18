@@ -172,5 +172,7 @@ public class CompareActivity extends Activity {
         b.setText((on ? "✓ " : "") + t);
         GradientDrawable g = new GradientDrawable(); g.setColor(on ? 0xFFF39C12 : 0xFF3A3A3A); g.setCornerRadius(Ui.dp(this, 10)); b.setBackgroundDrawable(g);
         b.setTextColor(on ? 0xFF1A1A1A : 0xFFFFFFFF);
+        b.setMinWidth(0); b.setMinimumWidth(0); b.setPadding(Ui.dp(this, 6), b.getPaddingTop(), Ui.dp(this, 6), b.getPaddingBottom());
+        Ui.fit(b, 15);
     }
 }

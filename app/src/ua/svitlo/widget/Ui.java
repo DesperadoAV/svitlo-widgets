@@ -24,6 +24,18 @@ final class Ui {
             }
         });
     }
+    /** Текст кнопки — в один рядок: не влазить — шрифт дрібнішає (до 9 sp), а не обрізається. Працює на всіх Android. */
+    static void fit(final TextView b, final float sp) {
+        b.setMaxLines(1); b.setTextSize(sp);
+        b.post(new Runnable() { @Override public void run() {
+            float w = b.getWidth() - b.getPaddingLeft() - b.getPaddingRight(), dens = b.getResources().getDisplayMetrics().scaledDensity;
+            if (w <= 0) return;
+            android.text.TextPaint p = new android.text.TextPaint(b.getPaint());
+            float s = sp;
+            for (; s > 9; s -= 0.5f) { p.setTextSize(s * dens); if (p.measureText(b.getText().toString()) <= w) break; }
+            if (s != sp) b.setTextSize(s);
+        } });
+    }
     static int dp(Activity a, float v) { return Math.round(v * a.getResources().getDisplayMetrics().density); }
     static TextView text(Activity a, ViewGroup parent, String s, float sp, int color, boolean bold) {
         TextView t = new TextView(a); t.setText(s); t.setTextSize(sp); t.setTextColor(color);
