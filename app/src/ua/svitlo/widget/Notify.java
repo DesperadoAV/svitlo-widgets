@@ -67,6 +67,23 @@ final class Notify {
         } catch (Exception e) { Log.w(TAG, "topics", e); }
     }
 
+    /** Попросити сервер (бот для мешканців) надіслати пробне через Firebase на цей телефон. null — надіслано, інакше — чому ні. */
+    static String pushTest(Context c, String token) {
+        String base = Data.url(c).replaceAll("/(status\\.json|api/status)$", "");
+        try {
+            java.net.HttpURLConnection con = (java.net.HttpURLConnection) new java.net.URL(base + "/push-test").openConnection();
+            con.setConnectTimeout(10000); con.setReadTimeout(15000); con.setDoOutput(true); con.setRequestMethod("POST");
+            con.setRequestProperty("content-type", "application/json");
+            con.getOutputStream().write(("{\"token\":\"" + token.replace("\"", "") + "\"}").getBytes("UTF-8"));
+            int code = con.getResponseCode();
+            if (code != 200) return "сервер відповів " + code;
+            java.io.InputStream in = con.getInputStream(); java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096]; int n; while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            org.json.JSONObject j = new org.json.JSONObject(bo.toString("UTF-8"));
+            return j.optBoolean("ok") ? null : j.optString("error", "невідома помилка");
+        } catch (Exception e) { return "немає зв'язку з сервером"; }
+    }
+
     // ---------- показ ----------
     static void channels(Context c) {
         if (Build.VERSION.SDK_INT < 26) return;

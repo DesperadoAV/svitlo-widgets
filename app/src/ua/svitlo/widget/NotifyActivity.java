@@ -76,11 +76,32 @@ public class NotifyActivity extends Activity {
         if (sel.isEmpty() || Build.VERSION.SDK_INT < 33 || checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED) finish();
     }
 
+    /** Пробне: справжнє сповіщення через сервер і Firebase на цей телефон; не вийшло — показуємо, як виглядатиме, і чому. */
     void test() {
         askPermission();
+        if (Notify.unavailable(this) != null) { local(""); return; }
+        note.setText("Надсилаю пробне сповіщення через сервер…");
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new com.google.android.gms.tasks.OnCompleteListener<String>() {
+                @Override public void onComplete(com.google.android.gms.tasks.Task<String> t) {
+                    if (!t.isSuccessful() || t.getResult() == null) { local("Firebase не видав телефону ідентифікатор"); return; }
+                    final String tok = t.getResult();
+                    new Thread(new Runnable() { @Override public void run() {
+                        final String err = Notify.pushTest(NotifyActivity.this, tok);
+                        runOnUiThread(new Runnable() { @Override public void run() {
+                            if (err == null) note.setText("✅ Сервер надіслав пробне сповіщення — воно має з'явитися за кілька секунд.");
+                            else local(err);
+                        } });
+                    } }).start();
+                }
+            });
+        } catch (Exception e) { local(String.valueOf(e.getMessage())); }
+    }
+    void local(String why) {
         List<String> sel = Notify.queues(this);
         String q = sel.isEmpty() ? "3.2" : sel.get(0);
         Notify.show(this, "warn", q, "⏰ Черга " + q + ": за 10 хв відключення", "Так виглядатиме сповіщення (це перевірка)");
+        if (!why.isEmpty()) note.setText("Показано, як виглядатиме сповіщення. Через сервер не вийшло: " + why);
     }
 
     @Override public void onRequestPermissionsResult(int code, String[] perms, int[] res) {

@@ -101,6 +101,14 @@ penv.SELF={ fetch:(u,i)=>bot.fetch(new Request(u,i),penv,ctx) };
 const of=globalThis.fetch; let first401=true; globalThis.fetch=async(u,o)=>{ if(String(u).startsWith("https://fcm.") && first401){ first401=false; return new Response("unauth",{status:401}); } return of(u,o); };
 Object.assign(Q("3.2"),{state:"on",since:NOW}); later(1); const o0=oauth; T=await tick(); globalThis.fetch=of;
 chk("Firebase відповів 401 — новий доступ і повтор", oauth===o0+1 && T.fcm.some(x=>x.m.topic==="q_3.2"), `oauth ${o0}→${oauth}`);
+// «Пробне» із застосунку: справжнє сповіщення через Firebase на один телефон
+const PT=async b=>(await B("/push-test",{method:"POST",body:JSON.stringify(b)})).json();
+let pr=await PT({token:"коротко"}); chk("пробне: без справжнього ідентифікатора — відмова", pr.ok===false && /ідентифікатора/.test(pr.error), JSON.stringify(pr));
+const devTok="dEvIcE_"+"x".repeat(120)+":APA91b"; const f0=fcm.length;
+pr=await PT({token:devTok}); const ft=fcm.slice(f0)[0];
+chk("пробне: Firebase отримав повідомлення саме для цього телефона (token, kind=test)", pr.ok===true && ft && ft.m.token===devTok && !ft.m.topic && ft.m.data.kind==="test" && /Сповіщення працюють/.test(ft.m.data.title), JSON.stringify(pr)+" "+JSON.stringify(ft&&ft.m).slice(0,160));
+pr=await PT({token:devTok}); chk("пробне: вдруге за хвилину — «зачекайте хвилину»", pr.ok===false && /хвилину/.test(pr.error) && fcm.length===f0+1);
+later(2); pr=await PT({token:devTok}); chk("…за 2 хв — знову можна", pr.ok===true);
 // головна сторінка й /setup
 let t=await (await B("/")).text(); chk("головна сторінка: кількість підписаних, Firebase налаштовано", /підписаних на сповіщення: \d+/.test(t) && t.includes("Firebase: налаштовано"), t.split("\n").slice(2,5).join(" | "));
 t=await (await B("/setup")).text(); chk("/setup перевіряє Firebase", t.includes("📲 Firebase: ✅ (проєкт svitlo-test)"), t.replace(/\n/g," | "));

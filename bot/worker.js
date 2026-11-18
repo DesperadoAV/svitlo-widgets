@@ -416,13 +416,25 @@ async function fcmToken(env, force) {
   await kvSet(env, "pub:fcmtok", JSON.stringify(FCM_TOK));
   return FCM_TOK.t;
 }
-async function fcmSend(env, tpc, data, ttl, again) {
+async function fcmSend(env, tpc, data, ttl, again, device) {   // tpc — тема; device — замість теми один телефон (пробне)
   const sa = JSON.parse(env.FCM_SA), tok = await fcmToken(env, again);
   const r = await fetch(`https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`, { method: "POST", headers: { authorization: "Bearer " + tok, "content-type": "application/json" },
-    body: JSON.stringify({ message: { topic: tpc, data, android: { priority: "HIGH", ttl } } }) });
-  if (r.status === 401 && !again) return fcmSend(env, tpc, data, ttl, true);
-  if (!r.ok) { const t = await r.text().catch(() => ""); await fcmErr(env, `${tpc}: ${r.status} ${t.slice(0, 200)}`); return false; }
+    body: JSON.stringify({ message: { ...(device ? { token: device } : { topic: tpc }), data, android: { priority: "HIGH", ttl } } }) });
+  if (r.status === 401 && !again) return fcmSend(env, tpc, data, ttl, true, device);
+  if (!r.ok) { const t = await r.text().catch(() => ""); if (!device) await fcmErr(env, `${tpc}: ${r.status} ${t.slice(0, 200)}`); return device ? t.slice(0, 200) || String(r.status) : false; }
   return true;
+}
+// «Пробне» в застосунку: справжнє сповіщення через Firebase саме на цей телефон (за його ідентифікатором) — не частіше разу на хвилину
+async function pushTest(env, body) {
+  const t = String(body && body.token || "");
+  if (!/^[\w:.\-]{60,400}$/.test(t)) return { ok: false, error: "немає ідентифікатора телефона" };
+  if (!env.FCM_SA) return { ok: false, error: "Firebase на сервері ще не налаштовано" };
+  const k = "pt:" + t.slice(-24), last = +(await kvGet(env, k)) || 0, hk = "pt:h:" + Math.floor(Date.now() / 3600000), hn = +(await kvGet(env, hk)) || 0;
+  if (Date.now() - last < 60000) return { ok: false, error: "зачекайте хвилину" };
+  if (hn >= 200) return { ok: false, error: "забагато перевірок, спробуйте пізніше" };
+  await kvSet(env, k, String(Date.now())); await kvSet(env, hk, String(hn + 1));
+  const r = await fcmSend(env, "", { kind: "test", q: "", title: "🧪 Сповіщення працюють", body: "Так приходитиме повідомлення, коли у ваших чергах зникне чи з'явиться світло.", at: String(Date.now()) }, "300s", false, t);
+  return r === true ? { ok: true } : { ok: false, error: "Firebase: " + r };
 }
 async function fcmErr(env, d) {
   let l = []; try { l = JSON.parse(await kvGet(env, "pub:fcmerr") || "[]"); } catch (e) {}
@@ -467,6 +479,11 @@ export default {
         const H = { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*", "cache-control": "public, max-age=60" };
         try { return new Response(JSON.stringify(statusJson(await snapshot(env))), { headers: H }); }
         catch (e) { return new Response(JSON.stringify({ v: 1, error: String(e && e.message || e) }), { status: 503, headers: { ...H, "cache-control": "no-store" } }); }
+      }
+      if (p === "/push-test" && req.method === "POST") {
+        await init(env);
+        const b = await req.json().catch(() => ({}));
+        return new Response(JSON.stringify(await pushTest(env, b)), { headers: { "content-type": "application/json; charset=utf-8" } });
       }
       if (p === "/drain" && req.method === "POST") {                 // помічник розсилки (виклик самого себе, щоб розіслати швидше)
         await init(env);
