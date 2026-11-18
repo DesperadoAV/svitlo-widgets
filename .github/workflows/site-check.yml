@@ -1,0 +1,39 @@
+name: Перевірка сайту наживо (лише читання)
+
+# Чекає, поки Cloudflare викладе нову версію основного воркера, і перевіряє сайт: сторінку, файли для встановлення
+# на телефон, помічника сповіщень і ключ сповіщень у боті для мешканців. Нічого не змінює.
+on:
+  workflow_dispatch:
+    inputs:
+      ver:
+        description: 'Яку версію основного воркера чекати'
+        default: '4.0.7'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Сайт і сповіщення
+        env:
+          SITE: https://svitlo51.a-m-vasylets.workers.dev
+          PUB: https://svitlo-public.desperadoav.workers.dev
+          VER: ${{ inputs.ver }}
+        run: |
+          ok() { echo "✅ $*" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          bad() { echo "❌ $*" | tee -a "$GITHUB_STEP_SUMMARY"; FAIL=1; }
+          FAIL=0
+          for i in $(seq 1 30); do v=$(curl -sS --max-time 20 "$SITE/health" | jq -r .ver 2>/dev/null); [ "$v" = "$VER" ] && break; sleep 10; done
+          [ "$v" = "$VER" ] && ok "основний воркер: версія $v" || bad "основний воркер: версія «$v», а чекали $VER"
+          h=$(curl -sS --max-time 20 "$SITE/")
+          echo "$h" | grep -q 'href="#notify"' && echo "$h" | grep -q 'window.SV_DATA=' && ok "сторінка: вкладки й дані на місці ($(echo "$h" | wc -c) байт)" || bad "сторінка не та"
+          echo "$h" | grep -o '"push":"[^"]*"' | head -1
+          echo "$h" | grep -o 'window.SV_DATA=.*;window.SV_CFG' | sed 's/window.SV_DATA=//; s/;window.SV_CFG//' | jq -r '.queues[] | "   черга \(.name): \(.state)"' || true
+          m=$(curl -sS --max-time 20 "$SITE/manifest.webmanifest" | jq -r .name 2>/dev/null); [ "$m" = "💡 Світло В Славутичі" ] && ok "manifest: $m" || bad "manifest: $m"
+          t=$(curl -sS -o /dev/null -w '%{content_type} %{size_download}' "$SITE/icon-512.png"); echo "$t" | grep -q '^image/png' && ok "значок: $t" || bad "значок: $t"
+          curl -sS --max-time 20 "$SITE/sw.js" | grep -q showNotification && ok "помічник сповіщень /sw.js" || bad "/sw.js"
+          k=$(curl -sS --max-time 20 -H "Origin: $SITE" -D hdr.txt "$PUB/wp/key" | jq -r .key 2>/dev/null)
+          [ ${#k} -ge 80 ] && grep -qi 'access-control-allow-origin: \*' hdr.txt && ok "бот: ключ сповіщень є, сайту дозволено (${k:0:12}…)" || bad "бот /wp/key: $k"
+          c=$(curl -sS -o /dev/null -w '%{http_code}' -X OPTIONS -H "Origin: $SITE" -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type' "$PUB/wp/sub")
+          [ "$c" = "204" ] && ok "бот: браузер може надсилати підписку (OPTIONS 204)" || bad "OPTIONS /wp/sub: $c"
+          curl -sS --max-time 20 "$PUB/" | tail -4
+          exit $FAIL
