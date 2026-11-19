@@ -85,11 +85,24 @@ jobs:
       - name: APK і результати → гілка app-build
         env:
           GH_TOKEN: ${{ github.token }}
+          HEAD_MSG: ${{ github.event.head_commit.message }}
         run: |
           mkdir -p pub/tests
           cp art/apk/* pub/ 2>/dev/null || true
           for d in art/test-api*; do [ -d "$d" ] || continue; n=$(basename $d); mkdir -p pub/tests/$n; cp $d/*.png $d/results.txt $d/crash.txt $d/logcat-app.txt pub/tests/$n/ 2>/dev/null || true; done
           { echo "Збірка: ${{ github.sha }} · run ${{ github.run_number }}"; echo "Тести: ${{ needs.test.result }}"; for f in pub/tests/*/results.txt; do [ -f "$f" ] || continue; echo; echo "== $(basename $(dirname $f))"; cat "$f"; done; [ -f art/apk/build.log ] && { echo; echo "== збірка"; tail -30 art/apk/build.log; }; true; } > pub/SUMMARY.txt
+          # 📲 нова версія для людей — лише коли збірка вдалась і всі тести на емуляторах пройшли:
+          # GitHub Release (звідти завантажують APK) і latest.json (його перевіряє застосунок і бот для мешканців)
+          if [ "${{ needs.build.outputs.ok }}" = "true" ] && [ "${{ needs.test.result }}" = "success" ] && [ -f pub/svitlo-widget.apk ]; then
+            V="1.1.${{ github.run_number }}"; C=$(( ${{ github.run_number }} + 100 ))
+            NOTES=$(printf '%s' "$HEAD_MSG" | head -1 | cut -c1-200)
+            gh release create "v$V" pub/svitlo-widget.apk -R "${{ github.repository }}" --title "💡 Світло В Славутичі $V" --notes "$NOTES" --latest \
+              && jq -n --argjson c "$C" --arg n "$V" --arg u "https://github.com/${{ github.repository }}/releases/download/v$V/svitlo-widget.apk" --arg t "$NOTES" \
+                   '{code:$c, name:$n, url:$u, notes:$t}' > pub/latest.json \
+              && echo "📲 Випущено версію $V для оновлення" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          # останній опис версії не губимо, навіть якщо ця збірка не пройшла тести
+          [ -f pub/latest.json ] || curl -sSf "https://raw.githubusercontent.com/${{ github.repository }}/app-build/latest.json" -o pub/latest.json || true
           cd pub && git init -q && git checkout -q -b app-build && git add -A
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "Застосунок-віджет: збірка ${{ github.run_number }}"
           git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" app-build

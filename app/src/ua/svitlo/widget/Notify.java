@@ -25,7 +25,7 @@ import java.util.Set;
  */
 final class Notify {
     private Notify() {}
-    static final String CH_EVENTS = "events", CH_WARN = "warn", CH_SCHED = "sched", TAG = "SvitloNotify";
+    static final String CH_EVENTS = "events", CH_WARN = "warn", CH_SCHED = "sched", CH_NEWS = "news", TAG = "SvitloNotify";
 
     static String topic(String pre, String q) { return pre + q.replaceAll("[^A-Za-z0-9\\-_.~]", "_"); }
 
@@ -61,6 +61,7 @@ final class Notify {
         if (unavailable(c) != null) return;
         SharedPreferences p = Data.prefs(c);
         Set<String> want = new HashSet<>();
+        want.add("news");                                                     // 📢 оголошення й 📲 нова версія — усім
         for (String q : queues(c)) { want.add(topic("q_", q)); if (warn(c)) want.add(topic("w_", q)); if (sched(c)) want.add(topic("s_", q)); }
         Set<String> had = new HashSet<>(p.getStringSet("ntopics", new HashSet<String>()));
         try {
@@ -100,7 +101,9 @@ final class Notify {
         b.setDescription("Попередження перед плановим відключенням за графіком");
         NotificationChannel s = new NotificationChannel(CH_SCHED, "Графік відключень", NotificationManager.IMPORTANCE_DEFAULT);
         s.setDescription("Коли з'являється графік на завтра або графік змінюється");
-        nm.createNotificationChannel(a); nm.createNotificationChannel(b); nm.createNotificationChannel(s);
+        NotificationChannel n = new NotificationChannel(CH_NEWS, "Оголошення", NotificationManager.IMPORTANCE_HIGH);
+        n.setDescription("Важливі повідомлення від «Світло В Славутичі»");
+        nm.createNotificationChannel(a); nm.createNotificationChannel(b); nm.createNotificationChannel(s); nm.createNotificationChannel(n);
     }
 
     /** Повідомлення від сервера: показати, якщо людина його хоче (черга серед вибраних, вид не вимкнено). true — показано. */
@@ -118,18 +121,18 @@ final class Notify {
         channels(c);
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        boolean w = "warn".equals(kind), s = "sched".equals(kind);
-        int color = w ? 0xFFF39C12 : s ? 0xFF3498DB : "lost".equals(kind) ? 0xFFE74C3C : 0xFF2ECC71;
+        boolean w = "warn".equals(kind), s = "sched".equals(kind), nw = "news".equals(kind);
+        int color = w || nw ? 0xFFF39C12 : s ? 0xFF3498DB : "lost".equals(kind) ? 0xFFE74C3C : 0xFF2ECC71;
         Intent open = s ? new Intent(c, CompareActivity.class).putExtra("queues", q).putExtra("day", title.contains("завтра") ? 1 : 0)   // графік — одразу на екран графіка/перетинів
                         : new Intent(c, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pi = PendingIntent.getActivity(c, s ? 2 : 1, open, PendingIntent.FLAG_UPDATE_CURRENT | CardsWidget.immutable());
-        Notification.Builder nb = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, w ? CH_WARN : s ? CH_SCHED : CH_EVENTS) : new Notification.Builder(c);
+        Notification.Builder nb = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, w ? CH_WARN : s ? CH_SCHED : nw ? CH_NEWS : CH_EVENTS) : new Notification.Builder(c);
         nb.setSmallIcon(R.drawable.ic_stat).setColor(color).setContentTitle(title).setContentText(body)
             .setStyle(new Notification.BigTextStyle().bigText(body)).setAutoCancel(true).setContentIntent(pi)
             .setWhen(System.currentTimeMillis()).setShowWhen(true).setCategory(Notification.CATEGORY_EVENT);
         if (Build.VERSION.SDK_INT < 26) nb.setPriority(s ? Notification.PRIORITY_DEFAULT : Notification.PRIORITY_HIGH).setDefaults(Notification.DEFAULT_ALL);
-        nm.notify(("svitlo:" + q + ":" + (w ? "w" : s ? "s" : "e")).hashCode(), nb.build());   // одна черга — одне сповіщення кожного виду (нове замінює старе)
+        nm.notify(("svitlo:" + q + ":" + (w ? "w" : s ? "s" : nw ? "n" : "e")).hashCode(), nb.build());   // одна черга — одне сповіщення кожного виду (нове замінює старе)
         Log.i(TAG, "shown " + kind + " " + q + " | " + title);
     }
 }

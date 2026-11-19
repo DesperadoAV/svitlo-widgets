@@ -10,7 +10,7 @@ A() { timeout 60 adb "$@"; }                                    # кожна к�
 shot() { timeout 30 adb exec-out screencap -p > "out/api${API}_$1.png" 2>/dev/null; }
 hits() { grep -c "$1" hits.log 2>/dev/null || true; }
 waitfor() { for i in $(seq 1 30); do eval "$1" && return 0; sleep 2; done; return 1; }
-python3 server.py 8765 > out/server.log 2>&1 & SRV=$!
+python3 server.py 8765 "$(cd ../.. && pwd)/${APK#../../}" > out/server.log 2>&1 & SRV=$!
 A logcat -c
 # мережа емулятора буває не готова одразу після запуску — чекаємо до 2 хв, поки тестовий сервер стане доступним
 A shell svc wifi enable >/dev/null 2>&1; A shell svc data enable >/dev/null 2>&1
@@ -27,6 +27,24 @@ sleep 3                                                        # дані збе
 sleep 3; shot 01_holovnyi
 check "головний екран відкрив тестовий сайт (не справжній)" "[ \$(hits /site) -ge 1 ]"
 check "назва не залазить на рядок стану ($(A logcat -d -s SvitloMain:I | grep -o 'title_y.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'title_y.* OK'"
+# 📲 самооновлення: тестовий сервер каже «є версія 1.1.9999» → смужка на головному екрані → завантаження → встановлення
+A logcat -c
+A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site --es update_url $T/latest.json >/dev/null 2>&1; sleep 6
+shot 01c_nova_versiia
+check "нова версія: на головному екрані «📲 Доступна нова версія 1.1.9999»" "A logcat -d -s SvitloUpdate:I | grep -q 'update available 1.1.9999 (9999)'"
+A shell am start -W -n $PKG/.MainActivity --ez test_update true >/dev/null 2>&1
+waitfor "A logcat -d -s SvitloUpdate:I | grep -q 'install '" || true
+sleep 3; shot 01d_vstanovlennia
+check "«Оновити»: APK завантажився системним завантажувачем ($(A logcat -d -s SvitloUpdate:I | grep -o 'downloaded .*' | tail -1))" "A logcat -d -s SvitloUpdate:I | grep -q 'downloaded [0-9]* ok'"
+check "…і відкрилось встановлення ($(A shell dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity' | grep -o '[a-z.]*/[A-Za-z.]*' | head -1))" "A logcat -d -s SvitloUpdate:I | grep -q 'install content://' && A shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep -qi 'packageinstaller'"
+A shell input keyevent 4; sleep 1; A shell input keyevent 4; sleep 1
+A shell am start -S -W -n $PKG/.NotifyActivity --es test_update_push '1|1.1.1|http://10.0.2.2:8765/app.apk' >/dev/null 2>&1; sleep 2
+check "push «нова версія», а вона не новіша — нічого не показує" "A logcat -d -s SvitloUpdate:I | grep -q 'push: already'"
+A shell am start -S -W -n $PKG/.NotifyActivity --es test_update_push '9998|1.1.9998|http://10.0.2.2:8765/app.apk' >/dev/null 2>&1; sleep 2
+check "push «нова версія 1.1.9998» — сповіщення «📲 Нова версія застосунку»" "A logcat -d -s SvitloUpdate:I | grep -q 'notified 1.1.9998' && A shell dumpsys notification --noredact | grep -q 'Нова версія застосунку 1.1.9998'"
+A shell "am start -S -W -n $PKG/.NotifyActivity --es test_queues 3.2 --es test_push 'news||News test|Planovi roboty'" >/dev/null 2>&1; sleep 2
+check "📢 оголошення — показано всім (без черги), окремий канал «Оголошення»" "A logcat -d -s SvitloNotify:I | grep -q 'shown news ' && A shell dumpsys notification --noredact | grep -q 'News test'"
+A shell input keyevent 4; sleep 1
 # ↻ на головному екрані: поки оновлюється — крутиться, потім ✓
 A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site --ez test_refresh true >/dev/null 2>&1; sleep 8
 check "↻ на головному екрані: крутиться, доки оновлюється, потім ✓ ($(A logcat -d -s SvitloMain:I | grep -o 'refresh .*' | tr '\n' ' '))" "A logcat -d -s SvitloMain:I | grep -q 'refresh spin' && A logcat -d -s SvitloMain:I | grep -q 'refresh done ok'"

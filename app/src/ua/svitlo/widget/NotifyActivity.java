@@ -50,6 +50,8 @@ public class NotifyActivity extends Activity {
         fill();
         if (getIntent().getBooleanExtra("test_notify", false)) test();
         if (tp != null) { String[] a = tp.split("\\|", -1); if (a.length == 4) Notify.handle(this, a[0], a[1], a[2], a[3]); }
+        String tu = getIntent().getStringExtra("test_update_push");          // тест: push «нова версія» — «номер|назва|адреса»
+        if (tu != null) { String[] a = tu.split("\\|", -1); if (a.length == 3) Update.onPush(this, a[0], a[1], a[2]); }
     }
 
     void fill() {

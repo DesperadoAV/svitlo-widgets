@@ -4,6 +4,13 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 class H(BaseHTTPRequestHandler):
     def do_GET(self):
         open("hits.log", "a").write(time.strftime("%H:%M:%S") + " " + self.path + "\n")
+        port = self.server.server_address[1]
+        if self.path.startswith("/latest.json"):                                  # 📲 опис «нової версії» для перевірки самооновлення
+            b = json.dumps({"code": 9999, "name": "1.1.9999", "url": "http://10.0.2.2:%d/app.apk" % port, "notes": "тест"}).encode()
+            self.send_response(200); self.send_header("content-type", "application/json"); self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b); return
+        if self.path.startswith("/app.apk") and len(sys.argv) > 2:               # сам файл — той самий APK, що тестується
+            b = open(sys.argv[2], "rb").read()
+            self.send_response(200); self.send_header("content-type", "application/vnd.android.package-archive"); self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b); return
         if not self.path.startswith("/status.json"):
             b = ("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><body style='font:20px sans-serif;padding:20px'>"
                  "<h2>Тестовий сайт</h2><p>(справжній сайт у тестах не відкриваємо)</p>").encode()

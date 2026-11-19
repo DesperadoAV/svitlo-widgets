@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 📲 самооновлення: відкрити встановлення завантаженої нової версії -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- перевірити, чи є на телефоні сервіси Google (без них Firebase-сповіщення не працюють) -->
     <queries><package android:name="com.google.android.gms" /></queries>
 
@@ -41,6 +43,13 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- 📲 нова версія завантажилась — відкрити встановлення -->
+        <receiver android:name=".UpdateReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+            </intent-filter>
+        </receiver>
 
         <!-- перегляд віджета в застосунку — для автоматичних тестів на емуляторі -->
         <activity android:name=".PreviewActivity" android:exported="true" android:label="Перегляд віджета" />

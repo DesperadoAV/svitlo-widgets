@@ -11,6 +11,7 @@ public class PushService extends FirebaseMessagingService {
         Map<String, String> d = m.getData();
         String kind = d.get("kind"), q = d.get("q"), title = d.get("title"), body = d.get("body");
         if (title == null && m.getNotification() != null) { title = m.getNotification().getTitle(); body = m.getNotification().getBody(); }
+        if ("update".equals(kind)) { Update.onPush(this, d.get("code"), d.get("name"), d.get("url")); return; }   // 📲 нова версія — якщо справді новіша
         if (!Notify.handle(this, kind, q, title, body)) return;
         try { Data.fetch(this); CardsWidget.updateAll(this); } catch (Exception ignored) { }   // віджет — одразу зі свіжим станом (і графіком)
     }

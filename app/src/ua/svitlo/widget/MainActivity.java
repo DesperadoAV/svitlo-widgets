@@ -17,12 +17,14 @@ import android.widget.TextView;
 
 /** Головний екран: сайт із картками черг і мапою + кнопки «Мапа» і «Додати віджет». */
 public class MainActivity extends Activity {
-    WebView web; String testSite; android.widget.Button rf; android.widget.ProgressBar pb; int busy;
+    WebView web; String testSite; android.widget.Button rf; android.widget.ProgressBar pb; int busy; TextView upd; Update.Info newer;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         String u = getIntent().getStringExtra("data_url");                    // для автоматичних тестів: інша адреса даних
         if (u != null) { Data.prefs(this).edit().putString("data_url", u).remove("data").apply(); }
+        String uu = getIntent().getStringExtra("update_url");                  // для тестів: опис нової версії з тестового сервера
+        if (uu != null) Data.prefs(this).edit().putString("update_url", uu).putLong("upd_checked", 0).apply();
         testSite = getIntent().getStringExtra("site_url");                    // для тестів: тестовий сайт замість справжнього
 
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Ui.BG);
@@ -43,9 +45,17 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 21) { pb.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(0xFFFFFFFF)); pb.setTranslationZ(Ui.dp(this, 8)); }
         fl.addView(pb, new android.widget.FrameLayout.LayoutParams(Ui.dp(this, 18), Ui.dp(this, 18), android.view.Gravity.CENTER));
         rf.setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { refresh(); } });
+        // 📲 смужка «Доступна нова версія» (з'являється, лише коли є новіша)
+        upd = Ui.text(this, root, "", 15, 0xFFFFFFFF, true);
+        android.graphics.drawable.GradientDrawable ug = new android.graphics.drawable.GradientDrawable(); ug.setColor(0xFF2980B9); ug.setCornerRadius(Ui.dp(this, 10));
+        upd.setBackgroundDrawable(ug); upd.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
+        ((LinearLayout.LayoutParams) upd.getLayoutParams()).setMargins(Ui.dp(this, 3), Ui.dp(this, 2), Ui.dp(this, 3), Ui.dp(this, 6));
+        upd.setVisibility(android.view.View.GONE);
+        upd.setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startUpdate(); } });
         web = new WebView(this);
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
+        web.getSettings().setUserAgentString(web.getSettings().getUserAgentString() + " SvitloApp/" + BuildConfig.VERSION_NAME);   // сайт знає: оновлення — справа застосунку
         web.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView v, String url) {   // у застосунку — без підпису під картками сайту
                 v.evaluateJavascript("(function(){var e=document.querySelector('.ft');if(e)e.style.display='none';})()", null);
@@ -68,6 +78,30 @@ public class MainActivity extends Activity {
         Notify.channels(this);
         Notify.apply(this);                                                    // підписки на сповіщення — відновити, якщо злетіли
         if (getIntent().getBooleanExtra("test_refresh", false)) title.postDelayed(new Runnable() { @Override public void run() { refresh(); } }, 3000);
+        checkUpdate(getIntent());
+    }
+
+    @Override protected void onNewIntent(Intent i) { super.onNewIntent(i); setIntent(i); checkUpdate(i); }
+
+    /** 📲 Чи є новіша версія (раз на 6 год; зі сповіщення — одразу). Натиснули сповіщення «нова версія» — одразу завантажуємо. */
+    void checkUpdate(Intent it) {
+        final boolean fromPush = it != null && (it.getBooleanExtra("update", false) || it.getBooleanExtra("test_update", false));
+        new Thread(new Runnable() { @Override public void run() {
+            final Update.Info i = Update.check(MainActivity.this, fromPush);
+            runOnUiThread(new Runnable() { @Override public void run() { showUpdate(i); if (fromPush && i != null) startUpdate(); } });
+        } }).start();
+    }
+    void showUpdate(Update.Info i) {
+        newer = i;
+        if (i == null) { upd.setVisibility(android.view.View.GONE); return; }
+        upd.setText("📲 Доступна нова версія " + i.name + " — натисніть, щоб оновити");
+        upd.setVisibility(android.view.View.VISIBLE);
+    }
+    void startUpdate() {
+        if (newer == null) return;
+        Update.download(this, newer);
+        upd.setText("⏳ Завантажую версію " + newer.name + "… Коли завантажиться — відкриється встановлення");
+        android.widget.Toast.makeText(this, "Завантажую нову версію — хід видно в шторці", android.widget.Toast.LENGTH_LONG).show();
     }
 
     /** ↻: сайт і дані віджета — заново; значок крутиться, доки обидва не оновляться, потім на мить ✓ (або ⚠). */
