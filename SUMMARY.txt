@@ -1,0 +1,154 @@
+Збірка: 50cf18fa03784c4d0d30ad28548ce64eacb48a45 · run 28
+Тести: success
+
+== test-api24
+✅ мережа емулятора працює
+✅ встановлення APK (Android API 24)
+✅ застосунок завантажив дані з тестового сервера
+✅ головний екран відкрив тестовий сайт (не справжній)
+✅ назва не залазить на рядок стану (title_y 32 statusbar 24 OK)
+✅ нова версія: на головному екрані «📲 Доступна нова версія 1.1.9999»
+✅ «Оновити»: APK завантажився системним завантажувачем (downloaded 1 ok)
+✅ …і відкрилось встановлення (com.android.packageinstaller/.PackageInstallerActivity)
+✅ push «нова версія», а вона не новіша — нічого не показує
+✅ push «нова версія 1.1.9998» — сповіщення «📲 Нова версія застосунку»
+✅ 📢 оголошення — показано всім (без черги), окремий канал «Оголошення»
+✅ ↻ на головному екрані: крутиться, доки оновлюється, потім ✓ (refresh spin refresh done ok )
+✅ віджет: звичайний вигляд — ↻ без кружечка
+✅ віджет: поки оновлюється — замість ↻ крутиться кружечок
+✅ віджет: картки справді намальовані (drawn 6)
+✅ віджет: усі 6 карток влазять (cards 6 shown 6 hidden 0 expanded [] tomorrow [])
+✅ натискання на чергу 3.2 розкриває графік, усі 6 карток лишаються (cards 6 shown 6 hidden 0 expanded [3.2] tomorrow [])
+✅ вибір черг: 2 картки, обидві розкриті, із «завтра» (cards 2 shown 2 hidden 0 expanded [6.1, 3.2] tomorrow [6.1, 3.2])
+✅ малий віджет: показує, що влазить, і «ще N» (cards 6 shown 1 hidden 5 expanded [6.1] tomorrow [])
+✅ квадратик 1×1: 💡 і номер черги (mode tiles 70x70 cols 1 rows 1 n 1 kind 0 first 3.2 time «відкл 20:00»; drawn 1)
+✅ смужка 2×1, одна черга: стан і час докладно (mode tiles 150x70 cols 1 rows 1 n 1 kind 2 first 3.2 time «відкл 20:00»; drawn 1)
+✅ плитки 3 черг у вузькій смужці 2×1: 2 плитки з часом (mode tiles 160x90 cols 2 rows 1 n 2 kind 1 first 1.1 time «відкл 16:00»; drawn 2)
+✅ сітка 2×2: 4 плитки (mode tiles 150x150 cols 2 rows 2 n 4 kind 1 first 1.1 time «відкл 16:00»; drawn 4)
+✅ оновлення поверх (як на робочому столі) не додає плиток: усе ще 1 (mode tiles 150x90 cols 1 rows 1 n 1 kind 2 first 3.2 time «відкл 20:00»; drawn 1)
+✅ смужка в один ряд, одна черга: сьогодні (mode strip 296x90 queues 1; drawn 1)
+✅ два ряди, одна черга: велика картка — сьогодні й завтра (mode big 296x190 queues 1; drawn 1)
+✅ час на плитці: світла немає → «до …», є → «відкл …» або «з …»
+✅ пробне сповіщення показано
+✅ Firebase на цьому емуляторі: fcm на телефоні немає сервісів Google
+✅ графік на завтра: сповіщення показано (окремий канал «Графік відключень»)
+✅ …для невибраної черги — не показує
+✅ …галочку «📅 Графік на завтра» знято — не показує
+✅ перетини 3.2 і 6.1 на сьогодні: 6 відрізків, «ніде немає» — жодного (compare d0 [3.2, 6.1] segs 6 alloff 0 known 2)
+✅ …на завтра: 4 відрізки (compare d1 [3.2, 6.1] segs 4 alloff 0 known 2)
+✅ 2.1 і 6.1 сьогодні: 14:00–18:00 — немає світла ніде (compare d0 [2.1, 6.1] segs 3 alloff 1 known 2)
+✅ …завтра в 2.1 графіка ще немає — порівнюємо те, що є (compare d1 [2.1, 6.1] segs 1 alloff 0 known 1)
+✅ кнопка ↻: дані завантажено ще раз
+✅ без падінь
+
+== test-api30
+✅ мережа емулятора працює
+✅ встановлення APK (Android API 30)
+✅ застосунок завантажив дані з тестового сервера
+✅ головний екран відкрив тестовий сайт (не справжній)
+✅ назва не залазить на рядок стану (title_y 32 statusbar 24 OK)
+✅ нова версія: на головному екрані «📲 Доступна нова версія 1.1.9999»
+✅ «Оновити»: APK завантажився системним завантажувачем (downloaded 13 ok)
+✅ …і відкрилось встановлення (com.google.android.packageinstaller/com.android.packageinstaller.PackageInstallerActivity)
+✅ push «нова версія», а вона не новіша — нічого не показує
+✅ push «нова версія 1.1.9998» — сповіщення «📲 Нова версія застосунку»
+✅ 📢 оголошення — показано всім (без черги), окремий канал «Оголошення»
+✅ ↻ на головному екрані: крутиться, доки оновлюється, потім ✓ (refresh spin refresh done ok )
+✅ віджет: звичайний вигляд — ↻ без кружечка
+✅ віджет: поки оновлюється — замість ↻ крутиться кружечок
+✅ віджет: картки справді намальовані (drawn 6)
+✅ віджет: усі 6 карток влазять (cards 6 shown 6 hidden 0 expanded [] tomorrow [])
+✅ натискання на чергу 3.2 розкриває графік, усі 6 карток лишаються (cards 6 shown 6 hidden 0 expanded [3.2] tomorrow [])
+✅ вибір черг: 2 картки, обидві розкриті, із «завтра» (cards 2 shown 2 hidden 0 expanded [6.1, 3.2] tomorrow [6.1, 3.2])
+✅ малий віджет: показує, що влазить, і «ще N» (cards 6 shown 1 hidden 5 expanded [6.1] tomorrow [])
+✅ квадратик 1×1: 💡 і номер черги (mode tiles 70x70 cols 1 rows 1 n 1 kind 0 first 3.2 time «відкл 20:00»; drawn 1)
+✅ смужка 2×1, одна черга: стан і час докладно (mode tiles 150x70 cols 1 rows 1 n 1 kind 2 first 3.2 time «відкл 20:00»; drawn 1)
+✅ плитки 3 черг у вузькій смужці 2×1: 2 плитки з часом (mode tiles 160x90 cols 2 rows 1 n 2 kind 1 first 1.1 time «відкл 16:00»; drawn 2)
+✅ сітка 2×2: 4 плитки (mode tiles 150x150 cols 2 rows 2 n 4 kind 1 first 1.1 time «відкл 16:00»; drawn 4)
+✅ оновлення поверх (як на робочому столі) не додає плиток: усе ще 1 (mode tiles 150x90 cols 1 rows 1 n 1 kind 2 first 3.2 time «відкл 20:00»; drawn 1)
+✅ смужка в один ряд, одна черга: сьогодні (mode strip 296x90 queues 1; drawn 1)
+✅ два ряди, одна черга: велика картка — сьогодні й завтра (mode big 296x190 queues 1; drawn 1)
+✅ час на плитці: світла немає → «до …», є → «відкл …» або «з …»
+✅ пробне сповіщення показано
+✅ Firebase на цьому емуляторі: fcm ok
+✅ графік на завтра: сповіщення показано (окремий канал «Графік відключень»)
+✅ …для невибраної черги — не показує
+✅ …галочку «📅 Графік на завтра» знято — не показує
+✅ перетини 3.2 і 6.1 на сьогодні: 6 відрізків, «ніде немає» — жодного (compare d0 [3.2, 6.1] segs 6 alloff 0 known 2)
+✅ …на завтра: 4 відрізки (compare d1 [3.2, 6.1] segs 4 alloff 0 known 2)
+✅ 2.1 і 6.1 сьогодні: 14:00–18:00 — немає світла ніде (compare d0 [2.1, 6.1] segs 3 alloff 1 known 2)
+✅ …завтра в 2.1 графіка ще немає — порівнюємо те, що є (compare d1 [2.1, 6.1] segs 1 alloff 0 known 1)
+✅ кнопка ↻: дані завантажено ще раз
+✅ без падінь
+
+== test-api35
+✅ мережа емулятора працює
+✅ встановлення APK (Android API 35)
+✅ застосунок завантажив дані з тестового сервера
+✅ головний екран відкрив тестовий сайт (не справжній)
+✅ назва не залазить на рядок стану (title_y 32 statusbar 24 OK)
+✅ нова версія: на головному екрані «📲 Доступна нова версія 1.1.9999»
+✅ «Оновити»: APK завантажився системним завантажувачем (downloaded 1 ok)
+✅ …і відкрилось встановлення (com.google.android.packageinstaller/com.android.packageinstaller.PackageInstallerActivity)
+✅ push «нова версія», а вона не новіша — нічого не показує
+✅ push «нова версія 1.1.9998» — сповіщення «📲 Нова версія застосунку»
+✅ 📢 оголошення — показано всім (без черги), окремий канал «Оголошення»
+✅ ↻ на головному екрані: крутиться, доки оновлюється, потім ✓ (refresh spin refresh done ok )
+✅ віджет: звичайний вигляд — ↻ без кружечка
+✅ віджет: поки оновлюється — замість ↻ крутиться кружечок
+✅ віджет: картки справді намальовані (drawn 6)
+✅ віджет: усі 6 карток влазять (cards 6 shown 6 hidden 0 expanded [] tomorrow [])
+✅ натискання на чергу 3.2 розкриває графік, усі 6 карток лишаються (cards 6 shown 6 hidden 0 expanded [3.2] tomorrow [3.2])
+✅ вибір черг: 2 картки, обидві розкриті, із «завтра» (cards 2 shown 2 hidden 0 expanded [6.1, 3.2] tomorrow [6.1, 3.2])
+✅ малий віджет (Android 12+): усі картки в списку, розкриті не згортаються (mode list cards 6 shown 6 hidden 0 expanded [6.1, 3.2] tomorrow [6.1, 3.2])
+✅ квадратик 1×1: 💡 і номер черги (mode tiles 70x70 cols 1 rows 1 n 1 kind 0 first 3.2 time «відкл 20:00»; drawn 1)
+✅ смужка 2×1, одна черга: стан і час докладно (mode tiles 150x70 cols 1 rows 1 n 1 kind 2 first 3.2 time «відкл 20:00»; drawn 1)
+✅ плитки 3 черг у вузькій смужці 2×1: 2 плитки з часом (mode tiles 160x90 cols 2 rows 1 n 2 kind 1 first 1.1 time «відкл 16:00»; drawn 2)
+✅ сітка 2×2: 4 плитки (mode tiles 150x150 cols 2 rows 2 n 4 kind 1 first 1.1 time «відкл 16:00»; drawn 4)
+✅ оновлення поверх (як на робочому столі) не додає плиток: усе ще 1 (mode tiles 150x90 cols 1 rows 1 n 1 kind 2 first 3.2 time «відкл 20:00»; drawn 1)
+✅ смужка в один ряд, одна черга: сьогодні, гортанням — завтра (mode strip 296x90 queues 1; drawn 2)
+✅ два ряди, одна черга: велика картка — сьогодні й завтра (mode big 296x190 queues 1; drawn 1)
+✅ час на плитці: світла немає → «до …», є → «відкл …» або «з …»
+✅ пробне сповіщення показано
+✅ Firebase на цьому емуляторі: fcm ok
+✅ графік на завтра: сповіщення показано (окремий канал «Графік відключень»)
+✅ …для невибраної черги — не показує
+✅ …галочку «📅 Графік на завтра» знято — не показує
+✅ перетини 3.2 і 6.1 на сьогодні: 6 відрізків, «ніде немає» — жодного (compare d0 [3.2, 6.1] segs 6 alloff 0 known 2)
+✅ …на завтра: 4 відрізки (compare d1 [3.2, 6.1] segs 4 alloff 0 known 2)
+✅ 2.1 і 6.1 сьогодні: 14:00–18:00 — немає світла ніде (compare d0 [2.1, 6.1] segs 3 alloff 1 known 2)
+✅ …завтра в 2.1 графіка ще немає — порівнюємо те, що є (compare d1 [2.1, 6.1] segs 1 alloff 0 known 1)
+✅ кнопка ↻: дані завантажено ще раз
+✅ без падінь
+
+== збірка
+> Task :compileReleaseShaders NO-SOURCE
+> Task :generateReleaseAssets UP-TO-DATE
+> Task :mergeReleaseAssets
+> Task :compressReleaseAssets
+> Task :extractReleaseVersionControlInfo
+> Task :processReleaseJavaRes NO-SOURCE
+> Task :collectReleaseDependencies
+> Task :sdkReleaseDependencyData
+> Task :optimizeReleaseResources
+> Task :validateSigningRelease
+> Task :writeReleaseAppMetadata
+> Task :writeReleaseSigningConfigVersions
+> Task :mergeReleaseJavaResource
+> Task :mergeDexRelease
+> Task :compileReleaseArtProfile
+> Task :packageRelease
+> Task :createReleaseApkListingFileRedirect
+> Task :assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/b-1795067882264.json
+
+BUILD SUCCESSFUL in 18s
+40 actionable tasks: 40 executed
+Verifies
+Verified using v1 scheme (JAR signing): true
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+package: name='ua.svitlo.widget' versionCode='128' versionName='1.1.28' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+-rw-r--r-- 1 runner runner 2300118 Nov 19 05:58 out/svitlo-widget.apk

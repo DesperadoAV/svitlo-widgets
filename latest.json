@@ -1,0 +1,6 @@
+{
+  "code": 128,
+  "name": "1.1.28",
+  "url": "https://github.com/DesperadoAV/svitlo-widgets/releases/download/v1.1.28/svitlo-widget.apk",
+  "notes": "Тести застосунку: лапки для команд із «|», дозвіл на сповіщення; хоч одна ❌ — тест не пройдено і версія не випускається"
+}

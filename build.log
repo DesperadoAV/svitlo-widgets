@@ -1,0 +1,70 @@
+ключ: 1fca2fb74636…, пароль: 32 символів
+Firebase: google-services.json є — сповіщення увімкнені
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :preBuild UP-TO-DATE
+> Task :preReleaseBuild UP-TO-DATE
+> Task :mergeReleaseJniLibFolders
+> Task :mergeReleaseNativeLibs NO-SOURCE
+> Task :stripReleaseDebugSymbols NO-SOURCE
+> Task :extractReleaseNativeSymbolTables NO-SOURCE
+> Task :mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :generateReleaseBuildConfig
+> Task :checkReleaseDuplicateClasses
+> Task :javaPreCompileRelease
+> Task :generateReleaseResValues
+> Task :checkReleaseAarMetadata
+> Task :processReleaseGoogleServices
+> Task :mapReleaseSourceSetPaths
+> Task :generateReleaseResources
+> Task :packageReleaseResources
+> Task :createReleaseCompatibleScreenManifests
+> Task :extractDeepLinksRelease
+> Task :mergeReleaseResources
+> Task :parseReleaseLocalResources
+> Task :processReleaseMainManifest
+> Task :processReleaseManifest
+> Task :desugarReleaseFileDependencies
+> Task :processReleaseManifestForPackage
+> Task :mergeReleaseStartupProfile
+> Task :processReleaseResources
+
+> Task :compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :mergeExtDexRelease
+> Task :dexBuilderRelease
+> Task :mergeReleaseArtProfile
+> Task :mergeReleaseGlobalSynthetics
+> Task :mergeReleaseShaders
+> Task :compileReleaseShaders NO-SOURCE
+> Task :generateReleaseAssets UP-TO-DATE
+> Task :mergeReleaseAssets
+> Task :compressReleaseAssets
+> Task :extractReleaseVersionControlInfo
+> Task :processReleaseJavaRes NO-SOURCE
+> Task :collectReleaseDependencies
+> Task :sdkReleaseDependencyData
+> Task :optimizeReleaseResources
+> Task :validateSigningRelease
+> Task :writeReleaseAppMetadata
+> Task :writeReleaseSigningConfigVersions
+> Task :mergeReleaseJavaResource
+> Task :mergeDexRelease
+> Task :compileReleaseArtProfile
+> Task :packageRelease
+> Task :createReleaseApkListingFileRedirect
+> Task :assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/b-1795067882264.json
+
+BUILD SUCCESSFUL in 18s
+40 actionable tasks: 40 executed
+Verifies
+Verified using v1 scheme (JAR signing): true
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+package: name='ua.svitlo.widget' versionCode='128' versionName='1.1.28' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+-rw-r--r-- 1 runner runner 2300118 Nov 19 05:58 out/svitlo-widget.apk
