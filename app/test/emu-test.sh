@@ -38,9 +38,10 @@ sleep 3; shot 01d_vstanovlennia
 check "«Оновити»: APK завантажився системним завантажувачем ($(A logcat -d -s SvitloUpdate:I | grep -o 'downloaded .*' | tail -1))" "A logcat -d -s SvitloUpdate:I | grep -q 'downloaded [0-9]* ok'"
 check "…і відкрилось встановлення ($(A shell dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity' | grep -o '[a-z.]*/[A-Za-z.]*' | head -1))" "A logcat -d -s SvitloUpdate:I | grep -q 'install content://' && A shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep -qi 'packageinstaller'"
 A shell input keyevent 4; sleep 1; A shell input keyevent 4; sleep 1
-A shell am start -S -W -n $PKG/.NotifyActivity --es test_update_push '1|1.1.1|http://10.0.2.2:8765/app.apk' >/dev/null 2>&1; sleep 2
+[ "$API" -ge 33 ] && A shell pm grant $PKG android.permission.POST_NOTIFICATIONS >/dev/null 2>&1   # сповіщення дозволено (Android 13+)
+A shell "am start -S -W -n $PKG/.NotifyActivity --es test_update_push '1|1.1.1|http://10.0.2.2:8765/app.apk'" >/dev/null 2>&1; sleep 2
 check "push «нова версія», а вона не новіша — нічого не показує" "A logcat -d -s SvitloUpdate:I | grep -q 'push: already'"
-A shell am start -S -W -n $PKG/.NotifyActivity --es test_update_push '9998|1.1.9998|http://10.0.2.2:8765/app.apk' >/dev/null 2>&1; sleep 2
+A shell "am start -S -W -n $PKG/.NotifyActivity --es test_update_push '9998|1.1.9998|http://10.0.2.2:8765/app.apk'" >/dev/null 2>&1; sleep 2
 check "push «нова версія 1.1.9998» — сповіщення «📲 Нова версія застосунку»" "A logcat -d -s SvitloUpdate:I | grep -q 'notified 1.1.9998' && A shell dumpsys notification --noredact | grep -q 'Нова версія застосунку 1.1.9998'"
 A shell "am start -S -W -n $PKG/.NotifyActivity --es test_queues 3.2 --es test_push 'news||News test|Planovi roboty'" >/dev/null 2>&1; sleep 2
 check "📢 оголошення — показано всім (без черги), окремий канал «Оголошення»" "A logcat -d -s SvitloNotify:I | grep -q 'shown news ' && A shell dumpsys notification --noredact | grep -q 'News test'"
@@ -138,4 +139,6 @@ A logcat -d > out/logcat-all.txt
 if grep -A3 "FATAL EXCEPTION" out/logcat-all.txt | grep -q "$PKG"; then bad "застосунок падав (див. crash.txt)"; grep -A25 "FATAL EXCEPTION" out/logcat-all.txt > out/crash.txt; else ok "без падінь"; fi
 grep -iE "svitlo|RemoteViews" out/logcat-all.txt | tail -200 > out/logcat-app.txt
 grep -v ' /status.json' hits.log | grep -vE ' /(site|map)' > out/other-hits.txt
-kill $SRV 2>/dev/null; true
+kill $SRV 2>/dev/null
+# хоч одна перевірка не пройшла — тест не пройдено (і нова версія людям не випускається)
+! grep -q '^❌' out/results.txt
