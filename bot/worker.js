@@ -69,8 +69,12 @@ function fromMain(env, j) {
     now: +j.now, d0: String(j.today || fmtDate(j.now)), d1: String(j.tomorrow || nextDayOf(j.now)), off: Number.isFinite(+j.kyiv_offset_min) ? +j.kyiv_offset_min : kyivOffMin(j.now),
     map: j.map || MAP_DEFAULT, site: String(env.SITE_URL || j.site || MAIN(env) + "/"),
     queues: j.queues.filter(q => q && q.name).map(q => ({ name: String(q.name), state: st(q.state), since: +q.since || 0, today: ok(q.today), tomorrow: ok(q.tomorrow) })),
+    notice: noticeOf(j.notice),
   };
 }
+// 📢 оголошення з адмін-бота (основний бот 4.1.0+): лише коли все на місці
+const noticeOf = n => n && +n.id && typeof n.text === "string" && n.text.trim() && Array.isArray(n.to) && +n.until > 0
+  ? { id: +n.id, text: n.text.slice(0, 1500), at: +n.at || +n.id, until: +n.until, to: n.to.filter(x => x === "bot" || x === "site" || x === "app") } : null;
 async function pull(env) {                              // запит до основного бота (≤ 10 с)
   const r = await fetch(MAIN(env) + "/api/status", { headers: { "user-agent": "svitlo-public" }, signal: AbortSignal.timeout(10000) });
   if (r.status === 404) throw new Error("на основному боті вимкнена публічна сторінка або версія старіша за 4.0.5");
@@ -104,6 +108,7 @@ function statusJson(S) {
     v: 1, now: S.now, today: S.d0, tomorrow: S.d1, kyiv_offset_min: S.off, map: S.map, site: S.site,
     queues: S.queues.map(x => ({ name: x.name, state: x.state === 1 ? "on" : x.state === 0 ? "off" : "unknown", since: x.since || null,
       today: x.today && x.today.map(([a, b]) => [hm(a), b >= 1440 ? "24:00" : hm(b)]), tomorrow: x.tomorrow && x.tomorrow.map(([a, b]) => [hm(a), b >= 1440 ? "24:00" : hm(b)]) })),
+    notice: S.notice && S.notice.until > S.now ? S.notice : null,
   };
 }
 
@@ -386,11 +391,12 @@ async function onCallback(env, cq) {
 async function tick(env) {
   await init(env);
   const out = {};
-  const c = await env.DB.prepare("SELECT (SELECT 1 FROM subs LIMIT 1) s, (SELECT 1 FROM wpush LIMIT 1) w, (SELECT 1 FROM outbox LIMIT 1) o, (SELECT 1 FROM wpout LIMIT 1) p").first();
+  const c = await env.DB.prepare("SELECT (SELECT 1 FROM subs LIMIT 1) s, (SELECT 1 FROM wpush LIMIT 1) w, (SELECT 1 FROM outbox LIMIT 1) o, (SELECT 1 FROM wpout LIMIT 1) p, (SELECT 1 FROM pub_users LIMIT 1) u").first();
   const subs = c.s || c.w, pending = c.o || c.p;
-  if (subs || env.FCM_SA) {                              // нікому нічого не потрібно — основний бот не смикаємо
+  if (subs || c.u || env.FCM_SA) {                       // нікому нічого не потрібно — основний бот не смикаємо
     const S = await snapshot(env, true);
-    out.events = [...await events(env, S), ...await schedEvents(env, S)];
+    out.events = [...await events(env, S), ...await schedEvents(env, S), ...await noticeEvents(env, S)];
+    if (env.FCM_SA) out.events.push(...await appUpdate(env));
   }
   if (pending || (out.events && out.events.length)) out.sent = await drainAll(env);
   else { const n = await unpinOld(env); if (n) out.unpinned = n; }
@@ -577,6 +583,49 @@ async function drainAll(env) {
   if (c.m && !w.slow) for (let i = 0; i < Math.min(5, Math.ceil(c.m / 40)); i++) calls.push("/drain?w=1");
   const res = await Promise.all(calls.map(p => env.SELF.fetch("https://svitlo-public" + p, { method: "POST", headers: { "x-drain": key } }).then(x => x.json()).catch(() => ({ sent: 0 }))));
   return r.sent + w.sent + res.reduce((a, x) => a + (x.sent || 0), 0);
+}
+
+// ------------------------- 📢 Оголошення з адмін-бота -------------------------
+// Нове оголошення (основний бот кладе його в /api/status): у Telegram — усім, хто писав ботові; у застосунок — push (тема news);
+// у браузери — усім, хто ввімкнув сповіщення на сайті. Кожне — один раз (pub:notice — номер останнього розісланого).
+async function noticeEvents(env, S) {
+  const n = S.notice, now = Date.now();
+  if (!n || n.until <= now) return [];
+  if (String(await kvGet(env, "pub:notice")) === String(n.id)) return [];
+  await kvSet(env, "pub:notice", String(n.id));
+  if (now - n.at > 3600000) return [];                  // давнє (бот щойно запустили) — заднім числом не розсилаємо
+  const out = [], title = "📢 Світло В Славутичі";
+  if (n.to.includes("bot")) {
+    await env.DB.prepare("INSERT INTO outbox(chat_id,text,at) SELECT chat_id, ?, ? FROM pub_users").bind("📢 <b>Оголошення</b>\n\n" + esc(n.text), now).run();
+    out.push("notice:bot");
+  }
+  if (n.to.includes("app") && env.FCM_SA) {
+    await fcmSend(env, "news", { kind: "news", q: "", title, body: n.text.slice(0, 900), at: String(now) }, "86400s").catch(e => fcmErr(env, String(e && e.message || e)));
+    out.push("notice:app");
+  }
+  if (n.to.includes("site")) {
+    await env.DB.prepare("INSERT INTO wpout(sid,payload,at) SELECT id, ?, ? FROM wpush").bind(JSON.stringify({ kind: "news", q: "", title, body: n.text.slice(0, 500), tag: "news", url: "/", at: now }), now).run();
+    out.push("notice:site");
+  }
+  return out;
+}
+// 📲 Нова версія застосунку: раз на 30 хв дивимось опис останньої збірки (GitHub); вийшла новіша — push усім застосункам (тема news).
+// Сам застосунок показує це, лише якщо його версія старіша.
+const APP_LATEST = "https://raw.githubusercontent.com/DesperadoAV/svitlo-widgets/app-build/latest.json";
+async function appUpdate(env) {
+  const now = Date.now(), chk = +(await kvGet(env, "pub:appchk")) || 0;
+  if (now - chk < 1800000) return [];
+  await kvSet(env, "pub:appchk", String(now));
+  let j = null;
+  try { const r = await fetch(APP_LATEST, { cf: { cacheTtl: 60 }, signal: AbortSignal.timeout(8000) }); if (r.ok) j = await r.json(); } catch (e) {}
+  if (!j || !(+j.code > 0) || !/^https:\/\//.test(String(j.url || ""))) return [];
+  const had = +(await kvGet(env, "pub:appver")) || 0;
+  if (+j.code <= had) return [];
+  await kvSet(env, "pub:appver", String(+j.code));
+  if (!had) return [];                                  // уперше лише запам'ятати
+  await fcmSend(env, "news", { kind: "update", q: "", code: String(+j.code), name: String(j.name || ""), url: String(j.url),
+    title: "📲 Нова версія застосунку " + String(j.name || ""), body: "Натисніть, щоб завантажити й встановити оновлення.", at: String(now) }, "604800s").catch(e => fcmErr(env, String(e && e.message || e)));
+  return ["update:" + j.name];
 }
 
 // ------------------------- 🌐 Сповіщення в браузер (Web Push) -------------------------

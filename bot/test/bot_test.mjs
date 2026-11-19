@@ -59,7 +59,8 @@ const tgp=async(chat,text,gap=1500)=>{ NOW+=gap; const n=log.length; await B("/t
 // ті, хто користувався ботом до нового меню (4242, 4243 — зі сповіщеннями на 4.1): прибрати закріплене повідомлення зі станом
 sqlite.prepare("INSERT INTO pub_users(chat_id,first_ts,last_ts,n) VALUES(4242,?,?,3),(4243,?,?,5)").run(NOW-86400000,NOW-86400000,NOW-86400000,NOW-86400000);
 MAIN_HITS=0; let L=await cron();
-chk("старим користувачам щохвилинний запуск прибирає закріплене повідомлення (нічого не надсилаючи, основний бот не смикає)", L.filter(x=>x.m==="unpinAllChatMessages").map(x=>x.b.chat_id).sort().join(",")==="4242,4243" && !L.some(x=>x.m==="sendMessage") && MAIN_HITS===0, L.map(x=>x.m+":"+(x.b.chat_id||"")).join(",")+" / "+MAIN_HITS);
+chk("старим користувачам щохвилинний запуск прибирає закріплене повідомлення (нічого не надсилаючи)", L.filter(x=>x.m==="unpinAllChatMessages").map(x=>x.b.chat_id).sort().join(",")==="4242,4243" && !L.some(x=>x.m==="sendMessage"), L.map(x=>x.m+":"+(x.b.chat_id||"")).join(",")+" / "+MAIN_HITS);
+chk("…і раз на хвилину дивиться в основний бот (чи немає оголошення для всіх)", MAIN_HITS===1, MAIN_HITS);
 later(60000); L=await cron(); chk("…лише раз", !L.some(x=>x.m==="unpinAllChatMessages"));
 sqlite.prepare("INSERT INTO subs(chat_id,queue) VALUES(4243,'4.1')").run(); sqlite.prepare("DELETE FROM kv WHERE k='pub:prev'").run();
 const cbk=async(chat,data,mid=900)=>{ const n=log.length; await B("/tg",{method:"POST",headers:{"x-telegram-bot-api-secret-token":SEC},body:JSON.stringify({update_id:Math.random(),callback_query:{id:"c1",from:{id:chat},data,message:{chat:{id:chat},message_id:mid}}})}); return log.slice(n); };
