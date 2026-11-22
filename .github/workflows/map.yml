@@ -56,8 +56,8 @@ jobs:
         if: steps.pub.outputs.done == '1'
         run: |
           for i in $(seq 1 30); do
-            h=$(curl -sS --max-time 20 "https://desperadoav.github.io/Svitlo_in_Slavutych/?t=$(date +%s)" || true)
-            [ "$(printf '%s' "$h" | git hash-object --stdin)" = "$(git hash-object map/index.html)" ] && { echo "✅ Мапа наживо — нова версія" | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; }
+            curl -sS --max-time 20 -o live.html "https://desperadoav.github.io/Svitlo_in_Slavutych/?t=$(date +%s)" || true
+            cmp -s live.html map/index.html && { echo "✅ Мапа наживо — нова версія" | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; }
             sleep 20
           done
           echo "::warning::GitHub Pages ще не показує нову версію (буває до 10 хв) — перевірте пізніше"
