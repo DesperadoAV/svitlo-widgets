@@ -6,3 +6,6 @@ node_modules/
 app/google-services.json
 app/build/
 app/.gradle/
+map/test/node_modules/
+map/test/out/
+map/test/results.txt

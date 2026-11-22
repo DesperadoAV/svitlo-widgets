@@ -13,14 +13,22 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
         
+        /* Повідомлення зверху: праворуч від кнопок, під меню та вікнами (вони відкриваються над ним); можна згорнути */
         #top-alert { 
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); 
-            z-index: 2000; background: #fff3cd; color: #856404; padding: 10px 20px; 
+            position: absolute; top: 10px; left: 72px; right: 12px; margin: 0 auto; width: -webkit-fit-content; width: fit-content; box-sizing: border-box;
+            z-index: 1000; background: #fff3cd; color: #856404; padding: 6px 6px 6px 16px; 
             border-radius: 20px; font-weight: bold; font-size: 13px; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid #ffeeba; 
-            display: none; text-align: center; max-width: 85%; 
-            white-space: pre-wrap; word-wrap: break-word;
+            display: none; align-items: flex-start; gap: 8px;
         }
+        #top-alert.show { display: flex; }
+        #top-alert.behind { visibility: hidden; }
+        #alert-text { flex: 1; min-width: 0; padding: 4px 0; text-align: center; white-space: pre-wrap; word-wrap: break-word; max-height: 38vh; overflow-y: auto; }
+        #alert-mini { display: none; padding: 4px 0; white-space: nowrap; }
+        #alert-btn { flex: none; width: 28px; height: 28px; border: none; border-radius: 50%; background: rgba(133,100,4,0.14); color: #856404; font-size: 14px; line-height: 28px; padding: 0; cursor: pointer; }
+        #top-alert.min { cursor: pointer; padding-left: 12px; }
+        #top-alert.min #alert-text { display: none; }
+        #top-alert.min #alert-mini { display: block; }
 
         .ui-btn { position: absolute; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1001; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none; width: 48px; height: 48px; user-select: none; -webkit-user-select: none; }
         .side-btn { left: 15px; top: 15px; }
@@ -63,7 +71,7 @@
 </head>
 <body>
         
-    <div id="top-alert"></div>
+    <div id="top-alert" onclick="if (this.classList.contains('min')) alertMin(false)"><span id="alert-text"></span><span id="alert-mini">📢 Повідомлення</span><button id="alert-btn" type="button" onclick="event.stopPropagation(); alertMin(!document.getElementById('top-alert').classList.contains('min'))" aria-label="Згорнути повідомлення" title="Згорнути">▲</button></div>
     <div id="map"></div>
 
     <div class="ui-btn side-btn" onclick="toggleMenu()"><img src="https://img.icons8.com/material-rounded/24/228BE6/layers.png"/></div>
@@ -178,6 +186,13 @@
         }).setView([51.5229, 30.7598], 15);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // вікна інформації на мапі відкриваються нижче згорнутого повідомлення; якщо все ж перекриваються — повідомлення ховається, поки вікно відкрите
+        L.Popup.mergeOptions({ autoPanPaddingTopLeft: L.point(10, 64) });
+        const openPopups = new Set();
+        let overlapQueued = false;
+        map.on('popupopen', e => openPopups.add(e.popup));
+        map.on('popupclose', e => openPopups.delete(e.popup));
+        map.on('popupopen popupclose move zoomend resize', () => { if (!overlapQueued) { overlapQueued = true; requestAnimationFrame(() => { overlapQueued = false; alertOverlap(); }); } });
         map.on('click', () => document.getElementById('qMenu').style.display = 'none');
         
         let layers = {}, markersStore = {};
@@ -361,11 +376,13 @@ function applyMainSheet(rows) {
 
     const alertEl = document.getElementById('top-alert');
     if (finalAlertText && finalAlertText !== "") {
-        alertEl.innerText = finalAlertText;
-        alertEl.style.display = 'block';
+        document.getElementById('alert-text').innerText = finalAlertText;
+        alertEl.classList.add('show');
+        alertMinShow(alertMinSaved() === finalAlertText);   // згорнуте лишається згорнутим, поки текст той самий; нове повідомлення — розгорнуте
     } else {
-        alertEl.style.display = 'none';
+        alertEl.classList.remove('show');
     }
+    alertOverlap();
 
     // Оновлення списку черг (рядки 1-6)
     let fHtml = "";
@@ -590,6 +607,27 @@ window.addEventListener('online', onResume);
 
         function focusAddr(q, a) { const m = markersStore[q][a]; if(m) { map.setView(m.getLatLng(), 18); m.openPopup(); document.getElementById('qMenu').style.display = 'none'; }}
         function focusNez(lat, lng) { map.setView([lat, lng], 18); document.getElementById('qMenu').style.display = 'none'; }
+        // 📢 повідомлення зверху: згорнути / розгорнути (запам'ятовується для цього тексту)
+        function alertMinSaved() { try { return localStorage.getItem('svitlo-alert-min'); } catch (e) { return null; } }
+        function alertMinShow(min) {
+            const a = document.getElementById('top-alert'), b = document.getElementById('alert-btn');
+            a.classList.toggle('min', min);
+            b.textContent = min ? '▼' : '▲';
+            b.title = min ? 'Розгорнути' : 'Згорнути';
+            b.setAttribute('aria-label', min ? 'Розгорнути повідомлення' : 'Згорнути повідомлення');
+        }
+        function alertMin(min) {
+            try { if (min) localStorage.setItem('svitlo-alert-min', document.getElementById('alert-text').innerText); else localStorage.removeItem('svitlo-alert-min'); } catch (e) {}
+            alertMinShow(min); alertOverlap();
+        }
+        function alertOverlap() {
+            const a = document.getElementById('top-alert');
+            if (!a.classList.contains('show')) return;
+            const r = a.getBoundingClientRect();
+            let hide = false;
+            openPopups.forEach(p => { const el = p.getElement(); if (!el) return; const q = el.getBoundingClientRect(); if (q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top) hide = true; });
+            a.classList.toggle('behind', hide);
+        }
         function toggleMenu() { const m = document.getElementById('qMenu'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
         function toggleModal(id) { const m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; if(m.style.display === 'flex' && id === 'infoModal') showPage('page-main'); if(m.style.display === 'flex' && id === 'graphModal') refreshChart(); }
         function refreshChart() { document.getElementById('chartImg').src = CHART_URL + "?t=" + Math.floor(Date.now() / 300000); }
