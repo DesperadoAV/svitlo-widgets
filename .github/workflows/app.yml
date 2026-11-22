@@ -50,13 +50,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { api: 24, target: default, arch: x86 }
-          - { api: 30, target: google_apis, arch: x86_64 }
-          - { api: 35, target: google_apis, arch: x86_64 }
+          - { api: 24, target: default, arch: x86 }          # Android 7
+          - { api: 28, target: google_apis, arch: x86_64 }   # Android 9
+          - { api: 30, target: google_apis, arch: x86_64 }   # Android 11 (як Redmi Note 10 Pro з коробки)
+          - { api: 33, target: google_apis, arch: x86_64 }   # Android 13 (Redmi Note 10 Pro після оновлень)
+          - { api: 35, target: google_apis, arch: x86_64 }   # Android 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with: { name: apk, path: apk }
+      - name: Попередня випущена версія (щоб перевірити оновлення поверх неї)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo $(( ${{ github.run_number }} + 100 )) > apk/code.txt
+          gh release download -R "${{ github.repository }}" --pattern svitlo-widget.apk -D prev 2>/dev/null && ls -la prev || echo "попередньої версії немає"
       - name: KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

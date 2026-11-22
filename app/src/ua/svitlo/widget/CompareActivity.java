@@ -146,8 +146,8 @@ public class CompareActivity extends Activity {
         s.append(t); s.setSpan(new StyleSpan(Typeface.BOLD), 0, t.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         int bg;
         if (off.isEmpty()) { add(s, "\n🟡 Світло є всюди", 0xFFFFD866); bg = 0xFF1F2A1C; }
-        else if (on.isEmpty()) { add(s, "\n⚫ Відключено: " + join(off), 0xFFE8A33D); if (known.size() > 1) add(s, "\n⚠️ Немає світла ніде", 0xFFFF7B6B); bg = 0xFF2E1F1F; }
-        else { add(s, "\n⚫ Відключено: " + join(off), 0xFFE8A33D); add(s, "\n🟡 Світло є: " + join(on), 0xFFFFD866); bg = 0xFF262626; }
+        else if (on.isEmpty()) { add(s, "\n⚫ Відключено: " + join(off), 0xFFAEB7C1); if (known.size() > 1) add(s, "\n⚠️ Немає світла ніде", 0xFFFF7B6B); bg = 0xFF2E1F1F; }
+        else { add(s, "\n⚫ Відключено: " + join(off), 0xFFAEB7C1); add(s, "\n🟡 Світло є: " + join(on), 0xFFFFD866); bg = 0xFF262626; }
         TextView tv = new TextView(this); tv.setText(s); tv.setTextSize(15); tv.setTextColor(Ui.TEXT); tv.setLineSpacing(0, 1.1f);
         GradientDrawable g = new GradientDrawable(); g.setColor(bg); g.setCornerRadius(Ui.dp(this, 8)); tv.setBackgroundDrawable(g);
         int p = Ui.dp(this, 10); tv.setPadding(p, Ui.dp(this, 7), p, Ui.dp(this, 7));

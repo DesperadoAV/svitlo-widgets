@@ -16,8 +16,15 @@ A logcat -c
 A shell svc wifi enable >/dev/null 2>&1; A shell svc data enable >/dev/null 2>&1
 for i in $(seq 1 40); do A shell "ping -c 1 -W 2 10.0.2.2" >/dev/null 2>&1 && break; sleep 3; done
 check "мережа емулятора працює" "A shell 'ping -c 1 -W 2 10.0.2.2' >/dev/null 2>&1"
-A install -r "$APK" | tail -1
+# 📲 як у людей: спершу попередня випущена версія, а нова — поверх неї (той самий підпис і більший номер версії, інакше телефон відмовить)
+PREV="$(ls ../../prev/*.apk 2>/dev/null | head -1)"
+if [ -n "$PREV" ]; then
+  A install "$PREV" | tail -1
+  R=$(A install -r "$APK" 2>&1 | tail -1); echo "$R"
+  check "оновлення поверх попередньої версії ($R)" "echo '$R' | grep -q Success"
+else A install -r "$APK" | tail -1; fi
 check "встановлення APK (Android API $API)" "A shell pm list packages | grep -q $PKG"
+check "встановлена саме нова версія ($(A shell dumpsys package $PKG | grep -m1 -o 'versionName=[^ ]*'))" "A shell dumpsys package $PKG | grep -q 'versionCode=$(cat ../../apk/code.txt 2>/dev/null || echo .)'"
 # мережа емулятора іноді піднімається не одразу — чекаємо, поки тестовий сервер стане доступним із телефона
 A shell am start -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site >/dev/null 2>&1
 # мережа емулятора після запуску буває ще не готова — тоді застосунок пробує знову (як і на справжньому телефоні); тут — кнопкою ↻

@@ -7,13 +7,14 @@ import android.graphics.Path;
 import android.graphics.RectF;
 
 /**
- * Смужка графіка на добу: помаранчеві відрізки — планові відключення, біла риска — «зараз»,
+ * Смужка графіка на добу: жовте — світло є, сірі відрізки — планові відключення (графіка немає — темна смужка), біла риска — «зараз»,
  * під смужкою — риски щогодини (біля 0·6·12·18·24 — довші) і години 0·6·12·18·24.
  * Малюється в розмір, у якому її покаже віджет (ширина картки × 18 dp), — щоб цифри не розтягувались і не розмивались.
  */
 final class Bars {
     private Bars() {}
     static final int H_DP = 18;
+    static final int YELLOW = 0xFFE3B81F, GREY = 0xFF5E6B78;      // світло є / відключення — як на сайті
 
     /** wDp — ширина смужки в dp, dens — щільність екрана. */
     static Bitmap draw(int[][] iv, int nowMin, float wDp, float dens) {
@@ -24,15 +25,15 @@ final class Bars {
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         float top = 1f * d, bh = 6f * d, r = bh / 2;
         RectF track = new RectF(0, top, W, top + bh);
-        p.setColor(0xFF2B3A48);
+        p.setColor(iv != null ? YELLOW : 0xFF2B3A48);                // графік відомий — увесь день жовтий (світло), інакше — нейтральна
         c.drawRoundRect(track, r, r, p);
         c.save();
         Path clip = new Path(); clip.addRoundRect(track, r, r, Path.Direction.CW); c.clipPath(clip);
         if (iv != null) {
-            p.setColor(0xFFE8A33D);
+            p.setColor(GREY);
             for (int[] x : iv) c.drawRect(x[0] * W / 1440f, top, Math.min(1440, x[1]) * W / 1440f, top + bh, p);
         }
-        p.setColor(0x44FFFFFF);                                       // ледь помітні позначки 6, 12, 18
+        p.setColor(iv != null ? 0x38000000 : 0x44FFFFFF);             // ледь помітні позначки 6, 12, 18
         for (int h = 6; h < 24; h += 6) c.drawRect(h * W / 24f - 0.5f * d, top, h * W / 24f + 0.5f * d, top + bh, p);
         c.restore();
         p.setColor(0xFF8B9BB4);                                       // риски годин: щогодини коротка, біля підписів — довша
@@ -43,7 +44,11 @@ final class Bars {
             c.drawRect(x - tw / 2, ty, x + tw / 2, ty + (big ? 2.3f : 1.6f) * d, p);   // не торкаються цифр
         }
         p.setAlpha(255);
-        if (nowMin >= 0) { p.setColor(0xFFFFFFFF); float x = nowMin * W / 1440f; c.drawRoundRect(new RectF(x - 1.5f * d, 0, x + 1.5f * d, top + bh + 1.5f * d), d, d, p); }
+        if (nowMin >= 0) {                                            // «зараз»: біла риска з темною облямівкою — видно і на жовтому, і на сірому
+            float x = nowMin * W / 1440f;
+            p.setColor(0xFF17212B); c.drawRoundRect(new RectF(x - 2.3f * d, 0, x + 2.3f * d, top + bh + 1.9f * d), 1.4f * d, 1.4f * d, p);
+            p.setColor(0xFFFFFFFF); c.drawRoundRect(new RectF(x - 1.3f * d, 0.4f * d, x + 1.3f * d, top + bh + 1.3f * d), d, d, p);
+        }
         p.setColor(0xFF8B9BB4); p.setTextSize(9f * d);
         for (int h = 0; h <= 24; h += 6) {                            // 0 — з лівого краю, 24 — з правого, решта — по центру позначки
             String t = String.valueOf(h);
