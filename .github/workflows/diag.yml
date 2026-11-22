@@ -14,5 +14,5 @@ jobs:
     steps:
       - name: Головна сторінка бота
         run: |
-          curl -sS --max-time 30 "${{ inputs.url }}/" | tee page.txt
+          curl -sSL --max-time 30 "${{ inputs.url }}/" | tee page.txt
           { echo '```'; cat page.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
