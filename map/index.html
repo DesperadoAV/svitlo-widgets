@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/6qXnY1GR/1770893073813.png">
+    <title>Світло Славутич</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
+        
+        #top-alert { 
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); 
+            z-index: 2000; background: #fff3cd; color: #856404; padding: 10px 20px; 
+            border-radius: 20px; font-weight: bold; font-size: 13px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid #ffeeba; 
+            display: none; text-align: center; max-width: 85%; 
+            white-space: pre-wrap; word-wrap: break-word;
+        }
+
+        .ui-btn { position: absolute; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1001; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none; width: 48px; height: 48px; user-select: none; -webkit-user-select: none; }
+        .side-btn { left: 15px; top: 15px; }
+        .info-btn { left: 15px; top: 75px; color: #228BE6; font-size: 20px; font-weight: bold; }
+        .graph-btn { left: 15px; top: 135px; }
+        .forecast-btn { left: 15px; top: 195px; font-size: 22px; }
+        
+        .zoom-ctrl { position: absolute; right: 15px; bottom: 30px; z-index: 1001; display: flex; flex-direction: column; gap: 8px; }
+        .z-btn { width: 44px; height: 44px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; user-select: none; -webkit-user-select: none; }
+        
+        .nez-wrap { width: 100%; height: 100%; background: white; border: 2px solid #2c3e50; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .nez-wrap img { width: 80%; height: 80%; object-fit: contain; }
+
+        .q-menu { position: absolute; left: 75px; top: 15px; width: 280px; max-height: 85vh; background: white; border-radius: 16px; display: none; flex-direction: column; z-index: 1001; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
+        #menu-list { overflow-y: auto; flex: 1; }
+        .q-header { display: flex; align-items: center; padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-weight: bold; justify-content: space-between; user-select: none; -webkit-user-select: none; }
+        .q-header:hover { background: #f8f9fa; }
+        .q-info-box { display: flex; align-items: center; }
+        .q-color-box { width: 12px; height: 12px; border-radius: 3px; margin-right: 10px; }
+        
+        .address-list { display: none; background: #f9f9f9; }
+        .address-item { padding: 10px 15px 10px 20px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; color: #555; }
+
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2100; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; border-radius: 28px; padding: 25px; width: 100%; max-width: 400px; text-align: center; position: relative; max-height: 85vh; display: flex; flex-direction: column; }
+        .info-page { display: none; flex-direction: column; overflow-y: auto; }
+        .info-page.active { display: flex; }
+        
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #ccc; cursor: pointer; border: none; background: none; z-index: 10; }
+        .modal-title { color: #228BE6; font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+        .modal-text { font-size: 14px; color: #333 !important; line-height: 1.4; margin-bottom: 12px; text-align: left; }
+        
+        .nav-btn, .channel-item { display: flex; align-items: center; padding: 14px; background: #f8f9fa; border-radius: 15px; text-decoration: none; color: #333; font-weight: bold; cursor: pointer; border: 1px solid #eee; margin: 8px 0; }
+        .channel-item { justify-content: space-between; border: none; border-bottom: 1px solid #eee; border-radius: 0; margin: 0; font-size: 14px; }
+        .channel-color { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; }
+        .back-btn { align-self: flex-start; background: none; border: none; color: #228BE6; font-weight: bold; cursor: pointer; padding: 5px; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        
+        .status-legend { background: #f0f7ff; padding: 10px; border-radius: 12px; margin-top: 10px; border: 1px dashed #228BE6; }
+    </style>
+</head>
+<body>
+        
+    <div id="top-alert"></div>
+    <div id="map"></div>
+
+    <div class="ui-btn side-btn" onclick="toggleMenu()"><img src="https://img.icons8.com/material-rounded/24/228BE6/layers.png"/></div>
+    <div class="ui-btn info-btn" onclick="toggleModal('infoModal')">і</div>
+    <div class="ui-btn graph-btn" onclick="toggleModal('graphModal')"><img src="https://img.icons8.com/material-rounded/24/228BE6/calendar.png"/></div>
+    <div class="ui-btn forecast-btn" onclick="toggleModal('forecastModal')">🔮</div>
+
+    <div class="zoom-ctrl">
+        <div class="z-btn" onclick="map.zoomIn()">+</div>
+        <div class="z-btn" onclick="map.zoomOut()">−</div>
+    </div>
+
+    <div class="q-menu" id="qMenu">
+        <div style="padding:15px; font-weight:bold; text-align:center; border-bottom:1px solid #eee; background: #f8f9fa;">Об'єкти міста</div>
+        <div id="menu-list"></div>
+    </div>
+
+    <div class="modal" id="infoModal" onclick="toggleModal('infoModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-x" onclick="toggleModal('infoModal')">×</button>
+            <div id="page-main" class="info-page active">
+                <span class="modal-title">Світло Славутич</span>
+                <p class="modal-text"><b>Як користуватися мапою:</b></p>
+                <p class="modal-text">📍 <span style="color:#228BE6; font-weight:bold;">Кольоровий маркер</span> — світло зараз Є.</p>
+                <p class="modal-text">📍 <span style="color:#888; font-weight:bold;">Сірий маркер</span> — світло ВІДСУТНЄ.</p>
+                <div class="status-legend">
+                    <p class="modal-text" style="margin-bottom:0; font-size:12px;">Вимикайте окремі черги в меню шарів.</p>
+                </div>
+                <div style="margin-top:20px;">
+                    <div class="nav-btn" onclick="showPage('page-tg')"><img src="https://img.icons8.com/color/24/telegram-app.png"> Telegram канали</div>
+                    <div class="nav-btn" onclick="showPage('page-vb')"><img src="https://img.icons8.com/color/24/viber.png"> Viber канали</div>
+                </div>
+            </div>
+            <div id="page-tg" class="info-page">
+                <button class="back-btn" onclick="showPage('page-main')">← Назад</button>
+                <span class="modal-title" style="font-size: 18px;">Telegram канали</span>
+                <div style="overflow-y:auto;">
+                    <a data-link="tg_news" href="https://t.me/svitlo_in_Slavutych_News" target="_blank" class="channel-item"><span>📢 Новини</span> 🔗</a>
+                    <a data-link="tg_1.1" href="https://t.me/svitlo_in_Slavutych_1_1" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#ff0000"></div>Черга 1.1</div> 🔗</a>
+                    <a data-link="tg_2.1" href="https://t.me/svitlo_in_Slavutych_2_1" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#3498db"></div>Черга 2.1</div> 🔗</a>
+                    <a data-link="tg_3.1" href="https://t.me/svitlo_in_Slavutych_3_1" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#9900ff"></div>Черга 3.1</div> 🔗</a>
+                    <a data-link="tg_3.2" href="https://t.me/svitlo_in_Slavutych_3_2" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#ffcc00"></div>Черга 3.2</div> 🔗</a>
+                    <a data-link="tg_4.1" href="https://t.me/svitlo_in_Slavutych_4_1" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#ff9900"></div>Черга 4.1</div> 🔗</a>
+                    <a data-link="tg_6.1" href="https://t.me/svitlo_in_Slavutych_6_1" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#009933"></div>Черга 6.1</div> 🔗</a>
+                </div>
+            </div>
+            <div id="page-vb" class="info-page">
+                <button class="back-btn" onclick="showPage('page-main')">← Назад</button>
+                <span class="modal-title" style="font-size: 18px;">Viber канали</span>
+                <div style="overflow-y:auto;">
+                    <a data-link="vb_news" href="https://invite.viber.com/?g2=AQBWONG%2BDtc6YVZaVt3j7%2BE73z2aD5aruhm7JFLEDXOExJuSOJZd6Ca2OsxdFHLo" target="_blank" class="channel-item"><span>📢 Новини</span> 🔗</a>
+                    <a data-link="vb_1.1" href="https://invite.viber.com/?g2=AQAwYtpyJWoodlZaVSylf8qXJh%2BIkorI%2BUEIlSNEjLY97kwXcxRXWcee8Wt%2FJM%2FS" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#ff0000"></div>Черга 1.1</div> 🔗</a>
+                    <a data-link="vb_2.1" href="https://invite.viber.com/?g2=AQBXEog0eJuMg1ZaVvzFZ14R%2Bq%2B3qDs5gmfU3pLXpwkPygNpg43EBTllJkScCQI6" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#3498db"></div>Черга 2.1</div> 🔗</a>
+                    <a data-link="vb_3.1" href="https://invite.viber.com/?g2=AQA8UIh2a1ur71ZaVlCe5j56cKWAwAem1kuhxYeCg9xsUb8AFCKgRE5duiSA3fvW" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#9900ff"></div>Черга 3.1</div> 🔗</a>
+                    <a data-link="vb_3.2" href="https://invite.viber.com/?g2=AQA9Od9EXDrYslZaNY2rHJ1v1t8S5lA9RGxcLlvDP4ujK3n%2BHMvVHzeWmldseJdN" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#ffcc00"></div>Черга 3.2</div> 🔗</a>
+                    <a data-link="vb_4.1" href="https://invite.viber.com/?g2=AQAr4i0FDuS0TlZaWDF6W2Hk%2BTDJrVrCLKTBQSvAwDb7JPuDYn0HE0WtouQyqIm7" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#ff9900"></div>Черга 4.1</div> 🔗</a>
+                    <a data-link="vb_6.1" href="https://invite.viber.com/?g2=AQBP%2BePVKBjDBFZaVeCnWMT9gn%2Fl2vl2636E%2B9vRvecZjNegiPbNxN93KG90spyY" target="_blank" class="channel-item"><div style="display:flex; align-items:center;"><div class="channel-color" style="background:#009933"></div>Черга 6.1</div> 🔗</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="forecastModal" onclick="toggleModal('forecastModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-x" onclick="toggleModal('forecastModal')">×</button>
+            <h3>Графік черг</h3>
+            <div id="forecast-list"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="graphModal" onclick="toggleModal('graphModal')">
+        <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
+            <button class="close-x" onclick="toggleModal('graphModal')">×</button>
+            <img id="chartImg" src="https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png" style="width:100%; border-radius:10px;">
+        </div>
+    </div>
+
+    <script>
+        const DOC_ID = "2PACX-1vTDv155RMF-zxABtNBXm81ycd6eLswlpDqowPApt-ffwOn1q9J32hZucYSGvCMBDV0RpB1qfrRsHELs";
+        const MAP_DATA_GID = "1910800617";
+        const CHART_URL = "https://raw.githubusercontent.com/amvasylets/Svitlo_in_Slavutych/refs/heads/main/charts/summary_today.png";
+        const CASTLE_URL = "https://raw.githubusercontent.com/DesperadoAV/sandbox/main/castle_blue.png";
+
+        const QUEUE_CONFIG = {
+            "1.1": { gid: "0", color: "#ff0000", icon: "red" },
+            "2.1": { gid: "1407012161", color: "#3498db", icon: "blue" },
+            "3.1": { gid: "774761347", color: "#9900ff", icon: "violet" },
+            "3.2": { gid: "1047238720", color: "#ffcc00", icon: "gold" },
+            "4.1": { gid: "877384835", color: "#ff9900", icon: "orange" },
+            "6.1": { gid: "1811736051", color: "#009933", icon: "green" }
+        };
+
+        const PUNKT_NEZLAMNOSTI = [
+            { name: "Загальноміський бібліотечно-інформаційний центр", lat: 51.523402, lng: 30.761510 },
+            { name: "ЗДО №1 \"Калинка\"", lat: 51.525300, lng: 30.761493 },
+            { name: "ЗДО №6 \"Крунк\"", lat: 51.516414, lng: 30.760005 },
+            { name: "Кіноконцертний комплекс", lat: 51.522346, lng: 30.753734 },
+            { name: "КП \"ЖКЦ\"", lat: 51.517618, lng: 30.750250 },
+            { name: "Ліцей \"БезМеж\"", lat: 51.522895, lng: 30.766611 },
+            { name: "Молодіжний Простір", lat: 51.521670, lng: 30.757146 },
+            { name: "Пожежна частина", lat: 51.522111, lng: 30.744022 },
+            { name: "Школа 1", lat: 51.525253, lng: 30.756295 },
+            { name: "Школа 2", lat: 51.521059, lng: 30.750268 },
+            { name: "Школа 3", lat: 51.517586, lng: 30.754901 }
+        ];
+
+        let map = L.map('map', {
+            zoomControl: false, 
+            maxBounds: [[51.5000, 30.7000],[51.5500, 30.8200]], 
+            maxBoundsViscosity: 1.0,
+            minZoom: 14
+        }).setView([51.5229, 30.7598], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        map.on('click', () => document.getElementById('qMenu').style.display = 'none');
+        
+        let layers = {}, markersStore = {};
+        let nezlamnistLayer = L.layerGroup().addTo(map);
+
+        function getNezIcon(zoom) {
+            let s = zoom <= 14 ? 18 : (zoom === 15 ? 28 : 36);
+            return L.divIcon({
+                className: '',
+                html: `<div class="nez-wrap" style="width:${s}px; height:${s}px;"><img src="${CASTLE_URL}"></div>`,
+                iconSize: [s, s], iconAnchor: [s/2, s/2]
+            });
+        }
+
+        function getQIcon(color, zoom) {
+            let size = zoom <= 14 ? 12 : (zoom === 15 ? 24 : 32);
+            return new L.Icon({
+                iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [size * 0.6, size], iconAnchor: [size * 0.3, size], shadowSize: [size, size]
+            });
+        }
+
+        map.on('zoomend', () => {
+            const z = map.getZoom();
+            nezlamnistLayer.eachLayer(m => m.setIcon(getNezIcon(z)));
+            for(let q in layers) layers[q].eachLayer(m => m.setIcon(getQIcon(m._isLight ? QUEUE_CONFIG[q].icon : "grey", z)));
+        });
+
+        // --- ЛОГІКА ОДНОРАЗОВОГО ЛІЧИЛЬНИКА ---
+        function triggerCounter() {
+            if (!sessionStorage.getItem('was_counted')) {
+                const img = new Image();
+                img.src = "https://script.google.com/macros/s/AKfycbyyaj7xfeUZXnWyLeUUrKBxgg8H-OXFdSFX010kYj3WAAVt3CXbsRpO21-GutSjOOuB/exec?t=" + Date.now();
+                img.onload = () => sessionStorage.setItem('was_counted', 'true');
+            }
+        }
+        window.addEventListener('load', triggerCounter);
+        
+        // --- ФУНКЦІЯ ПАРСИНГУ CSV ---
+        // ЗАМІНИ ЦЮ ФУНКЦІЮ У СВОЄМУ КОДІ (або скопіюй весь блок нижче)
+function parseCSV(text) {
+    const result = [];
+    let row = [];
+    let cell = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        let nextChar = text[i + 1];
+
+        if (inQuotes && char === '"' && nextChar === '"') {
+            cell += '"';
+            i++;
+        } else if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            row.push(cell);
+            cell = '';
+        } else if ((char === '\r' || char === '\n') && !inQuotes) {
+            if (char === '\r' && nextChar === '\n') i++;
+            row.push(cell);
+            result.push(row);
+            row = [];
+            cell = '';
+        } else {
+            cell += char;
+        }
+    }
+    if (cell || row.length > 0) {
+        row.push(cell);
+        result.push(row);
+    }
+    return result;
+}
+
+// --- НАДІЙНЕ ОНОВЛЕННЯ ДАНИХ ---
+const REFRESH_MS = 2 * 60 * 1000;     // планове оновлення: раз на 2 хвилини
+const RETRY_MS = 45 * 1000;           // якщо Google не відповів: повтор через 45 секунд
+const RECHECK_MS = 20 * 1000;         // контрольна перевірка після відкриття сторінки
+const RESUME_GAP_MS = 30 * 1000;      // при поверненні на вкладку: оновити, якщо минуло більше 30 секунд
+const FETCH_TIMEOUT_MS = 20 * 1000;   // скільки чекати відповідь Google
+const STALE_ACCEPT_MS = 60 * 60 * 1000; // якщо старіша дата тримається годину, значить її виправили вручну
+const EXT_STALE_ACCEPT_MS = 5 * 60 * 1000; // дані mediadim: старіша дата лише перечікує затримку Google, не довше
+const STATE_KEY = 'svitlo_map_state_v1';
+
+let isUpdating = false, lastUpdate = 0, nextTimer = null, needRecheck = true, lastMenuHtml = "";
+const queueMarkers = {}, nezMarkers = [];
+const rowState = loadRowState();
+
+// Шари створюються одразу, щоб меню працювало, навіть якщо якусь чергу не вдалось завантажити
+for (let q in QUEUE_CONFIG) layers[q] = L.layerGroup().addTo(map);
+
+function loadRowState() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(STATE_KEY) || "{}");
+        const oldest = Date.now() - 30 * 24 * 3600 * 1000;
+        for (let k in saved) if (saved[k].ts < oldest) delete saved[k];
+        return saved;
+    } catch (e) { return {}; }
+}
+
+function saveRowState() {
+    try { localStorage.setItem(STATE_KEY, JSON.stringify(rowState)); } catch (e) {}
+}
+
+// Перетворює текст із колонки "Оновлено" на час. Якщо формат невідомий, повертає null
+function parseUpdated(text) {
+    const s = (text || "").trim();
+    if (!s) return null;
+    const now = Date.now();
+    let result = null;
+
+    if (/\d{4}-\d{2}-\d{2}T.*(Z|[+-]\d{2}:?\d{2})$/.test(s)) {
+        result = Date.parse(s);
+    } else {
+        const t = s.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        const h = t ? +t[1] : 0, mi = t ? +t[2] : 0, se = t && t[3] ? +t[3] : 0;
+        const noTime = s.replace(/\d{1,2}:\d{2}(:\d{2})?/, " ");
+        let y = null, mo, d, m;
+        if ((m = noTime.match(/(\d{4})-(\d{1,2})-(\d{1,2})/))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+        else if ((m = noTime.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/))) { d = +m[1]; mo = +m[2]; if (m[3]) y = +m[3]; }
+        else if ((m = noTime.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))) { mo = +m[1]; d = +m[2]; y = +m[3]; if (mo > 12) { const x = mo; mo = d; d = x; } }
+        else return null;
+        if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+        if (y !== null && y < 100) y += 2000;
+        const noYear = (y === null);
+        if (noYear) y = new Date(now).getFullYear();
+        result = new Date(y, mo - 1, d, h, mi, se).getTime();
+        if (noYear && result > now + 24 * 3600 * 1000) result = new Date(y - 1, mo - 1, d, h, mi, se).getTime();
+    }
+    // Дата з майбутнього не повинна заблокувати справжні оновлення
+    if (isNaN(result) || result > now + 36 * 3600 * 1000) return null;
+    return result;
+}
+
+// Не дає старій копії таблиці перезаписати вже побачені свіжіші дані
+function resolveRow(stateKey, isLight, updatedText, acceptMs = STALE_ACCEPT_MS) {
+    const ts = parseUpdated(updatedText);
+    const saved = rowState[stateKey];
+    if (ts === null) return { isLight, updatedText };
+
+    if (saved && ts < saved.ts) {
+        if (!saved.rejectedAt) saved.rejectedAt = Date.now();
+        if (Date.now() - saved.rejectedAt < acceptMs) {
+            return { isLight: saved.isLight, updatedText: saved.updatedText };
+        }
+    }
+    rowState[stateKey] = { ts, isLight, updatedText };
+    return { isLight, updatedText };
+}
+
+async function fetchCsv(gid) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    try {
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/e/${DOC_ID}/pub?output=csv&gid=${gid}&t=${Date.now()}`, { cache: 'no-store', signal: ctrl.signal });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const text = await res.text();
+        if (/^\s*</.test(text)) throw new Error("Google повернув сторінку замість таблиці");
+        return parseCSV(text);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function applyMainSheet(rows) {
+    if (rows.length < 10) throw new Error("Неповна головна таблиця");
+
+    const clean = (t) => {
+        if (!t) return "";
+        return t.trim().replace(/^"|"$/g, '').replace(/""/g, '"');
+    };
+
+    // Рядок 10 (індекс 9)
+    const autoText = clean(rows[9]?.[2]);   // C10
+    const manualText = clean(rows[9]?.[3]); // D10
+
+    // Пріоритет ручному тексту з D10
+    const finalAlertText = manualText !== "" ? manualText : autoText;
+
+    const alertEl = document.getElementById('top-alert');
+    if (finalAlertText && finalAlertText !== "") {
+        alertEl.innerText = finalAlertText;
+        alertEl.style.display = 'block';
+    } else {
+        alertEl.style.display = 'none';
+    }
+
+    // Оновлення списку черг (рядки 1-6)
+    let fHtml = "";
+    for (let i = 1; i <= 6; i++) {
+        const r = rows[i];
+        if (r) {
+            const qNum = clean(r[0]);
+            const statusInfo = clean(r[2]);
+            const manualInfo = clean(r[3]);
+            const color = QUEUE_CONFIG[qNum]?.color || "#333";
+            fHtml += `<div style="background:${color}; color:white; margin-bottom:8px; padding:12px; border-radius:12px; display:flex; justify-content:space-between; font-size:14px;">
+                        <b>Черга ${qNum}</b> 
+                        <span>${statusInfo} ${manualInfo}</span>
+                      </div>`;
+        }
+    }
+    document.getElementById('forecast-list').innerHTML = fHtml;
+
+    // Посилання на канали: адмін змінює їх у боті мапи (рядки MapData з ключами tg_… та vb_…)
+    applyChannelLinks(rows);
+
+    // Оновлення Пунктів Незламності (маркери лишаються на місці, відкрите вікно не закривається)
+    PUNKT_NEZLAMNOSTI.forEach((p, i) => {
+        const r = rows[13 + i];
+        const info = clean(r?.[2]) || 'Інформація уточнюється';
+        const workTime = clean(r?.[3]) || '';
+        const popup = `<b>🏠 ${p.name}</b><br><div style="background:#eef2f7; padding:8px; border-radius:8px; margin-top:5px; font-size:12px; white-space: pre-wrap;">${info}<br><b>${workTime}</b></div>`;
+        if (!nezMarkers[i]) {
+            nezMarkers[i] = L.marker([p.lat, p.lng], { icon: getNezIcon(map.getZoom()) }).bindPopup(popup).addTo(nezlamnistLayer);
+            nezMarkers[i]._html = popup;
+        } else if (nezMarkers[i]._html !== popup) {
+            nezMarkers[i].setPopupContent(popup);
+            nezMarkers[i]._html = popup;
+        }
+    });
+}
+
+// Порожнє або неправильне посилання в таблиці = посилання, вписане в цю сторінку
+function applyChannelLinks(rows) {
+    const custom = {};
+    rows.forEach(r => {
+        const key = (r[0] || "").trim();
+        const url = (r[1] || "").trim();
+        if (/^(tg|vb)_/.test(key) && /^https:\/\/[^\s"'<>]+$/.test(url)) custom[key] = url;
+    });
+    document.querySelectorAll('a[data-link]').forEach(a => {
+        if (!a.dataset.def) a.dataset.def = a.getAttribute('href');
+        const url = custom[a.dataset.link] || a.dataset.def;
+        if (a.getAttribute('href') !== url) a.setAttribute('href', url);
+    });
+}
+
+// Дані сторонньої мапи (mediadim). Вмикаються кнопкою «Джерело даних» у боті мапи:
+// бот пише в MapData ключі source, ext_gid, ext_updated і заповнює аркуш «Зовнішні».
+// Якщо дані застаріли або не завантажились, мапа показує дані з таблиць, як і раніше.
+const EXT_MAX_AGE_MS = 15 * 60 * 1000;
+async function loadExternal(mainRows) {
+    const keys = {};
+    mainRows.forEach(r => {
+        const k = (r[0] || "").trim();
+        if (k === "source" || k === "ext_gid" || k === "ext_updated") keys[k] = (r[1] || "").trim();
+    });
+    if (keys.source !== "mediadim" || !/^\d+$/.test(keys.ext_gid || "")) return null;
+    if (!(Date.now() - Date.parse(keys.ext_updated || "") < EXT_MAX_AGE_MS)) return null;
+    const rows = await fetchCsv(keys.ext_gid);
+    const ext = {};
+    rows.slice(1).forEach(r => {
+        const st = (r[2] || "").trim().toLowerCase();
+        if (r[0] && r[1] && (st === "y" || st === "n")) ext[`${r[0].trim()}|${r[1].trim()}`] = { isLight: st === "y", updatedText: (r[3] || "").trim() };
+    });
+    return ext;
+}
+
+function applyQueue(q, rows, ext) {
+    const conf = QUEUE_CONFIG[q];
+    const parsed = [];
+    for (let i = 2; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r[3]) continue;
+        const lat = parseFloat(r[3].replace(',', '.'));
+        const lng = parseFloat((r[4] || "").replace(',', '.'));
+        if (isNaN(lat) || isNaN(lng)) continue;
+        parsed.push({ r, lat, lng });
+    }
+    // Порожню або пошкоджену відповідь ігноруємо: на мапі лишаються попередні дані
+    if (!parsed.length) throw new Error("У черзі " + q + " немає рядків з координатами");
+
+    const current = queueMarkers[q] || (queueMarkers[q] = {});
+    const seen = {};
+    const store = {};
+
+    parsed.forEach(({ r, lat, lng }) => {
+        const key = `${r[1]}|${lat}|${lng}`;
+        const own = ext && ext[`${q}|${String(r[1]).trim()}`];
+        const row = own
+            ? resolveRow(`ext|${q}|${key}`, own.isLight, own.updatedText, EXT_STALE_ACCEPT_MS)
+            : resolveRow(`${q}|${key}`, r[5]?.trim().toLowerCase() === 'y', r[8] || '');
+        const html = `<b>${r[1]}</b>${r[2] ? `<br><i>${r[2]}</i>` : ''}<br>${row.isLight?'💡 Світло є':'🕯️ Світла немає'}<br><small>Оновлено: ${row.updatedText}</small>`;
+
+        let m = current[key];
+        if (!m) {
+            m = L.marker([lat, lng], { icon: getQIcon(row.isLight ? conf.icon : "grey", map.getZoom()) });
+            m._isLight = row.isLight;
+            m._html = html;
+            m.bindPopup(html);
+            m.addTo(layers[q]);
+            current[key] = m;
+        } else {
+            if (m._isLight !== row.isLight) {
+                m._isLight = row.isLight;
+                m.setIcon(getQIcon(row.isLight ? conf.icon : "grey", map.getZoom()));
+            }
+            if (m._html !== html) {
+                m._html = html;
+                m.setPopupContent(html);
+            }
+        }
+        seen[key] = true;
+        store[r[1]] = m;
+    });
+
+    for (let key in current) {
+        if (!seen[key]) {
+            layers[q].removeLayer(current[key]);
+            delete current[key];
+        }
+    }
+    markersStore[q] = store;
+}
+
+function scheduleNext(delay) {
+    clearTimeout(nextTimer);
+    nextTimer = setTimeout(() => {
+        // Прихована вкладка не навантажує Google. Оновимо, коли людина повернеться
+        if (!document.hidden) updateData();
+    }, delay);
+}
+
+async function updateData() {
+    if (isUpdating) return;
+    isUpdating = true;
+    clearTimeout(nextTimer);
+
+    const mainTask = fetchCsv(MAP_DATA_GID);
+    const extTask = mainTask.then(loadExternal).catch(e => { console.error("Дані mediadim:", e); return null; });
+    const tasks = [mainTask.then(applyMainSheet)];
+    for (let q in QUEUE_CONFIG) {
+        tasks.push(Promise.all([fetchCsv(QUEUE_CONFIG[q].gid), extTask]).then(([rows, ext]) => applyQueue(q, rows, ext)));
+    }
+    const results = await Promise.allSettled(tasks);
+    const failed = results.filter(r => r.status === 'rejected');
+    failed.forEach(r => console.error("Помилка оновлення:", r.reason));
+
+    refreshMenuKeepingState();
+    saveRowState();
+
+    lastUpdate = Date.now();
+    isUpdating = false;
+
+    if (failed.length) {
+        scheduleNext(RETRY_MS);
+    } else if (needRecheck) {
+        needRecheck = false;
+        scheduleNext(RECHECK_MS);
+    } else {
+        scheduleNext(REFRESH_MS + Math.random() * 15000); // щоб усі телефони не зверталися до Google в одну секунду
+    }
+}
+
+function onResume() {
+    if (document.hidden || Date.now() - lastUpdate < RESUME_GAP_MS) return;
+    needRecheck = true;
+    updateData();
+}
+document.addEventListener('visibilitychange', onResume);
+window.addEventListener('pageshow', (e) => { if (e.persisted) onResume(); });
+window.addEventListener('online', onResume);
+
+        function jsArg(t) { return String(t).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+        function buildMenuHtml() {
+            let html = `<div class="q-header" onclick="toggleAccordion('nez')"><div class="q-info-box"><div class="q-color-box" style="background:#2c3e50"></div><span>Пункти Незламності</span></div></div><div class="address-list" id="list-nez">${PUNKT_NEZLAMNOSTI.map(p => `<div class="address-item" style="border-left: 4px solid #2c3e50" onclick="focusNez(${p.lat},${p.lng})">${p.name}</div>`).join('')}</div>`;
+            for(let q in QUEUE_CONFIG) {
+                const col = QUEUE_CONFIG[q].color;
+                const isVisible = map.hasLayer(layers[q]);
+                const addresses = Object.keys(markersStore[q] || {}).sort((a,b) => a.localeCompare(b, 'uk'));
+                html += `<div class="q-header"><div class="q-info-box" onclick="toggleAccordion('${q}')"><div class="q-color-box" style="background:${col}"></div><span>Черга ${q}</span></div><div onclick="toggleLayer('${q}')">${isVisible ? '👁️' : '❌'}</div></div><div class="address-list" id="list-${q}">${addresses.map(a => `<div class="address-item" style="border-left: 4px solid ${col}" onclick="focusAddr('${q}','${jsArg(a)}')">${a}</div>`).join('')}</div>`;
+            }
+            return html;
+        }
+
+        function renderMenu() {
+            lastMenuHtml = buildMenuHtml();
+            document.getElementById('menu-list').innerHTML = lastMenuHtml;
+        }
+
+        // Оновлює меню лише коли щось змінилось, і лишає відкритий список та прокрутку
+        function refreshMenuKeepingState() {
+            const html = buildMenuHtml();
+            if (html === lastMenuHtml) return;
+            const list = document.getElementById('menu-list');
+            const openList = [...list.querySelectorAll('.address-list')].find(d => d.style.display === 'block');
+            const openId = openList ? openList.id : null;
+            const scroll = list.scrollTop;
+            lastMenuHtml = html;
+            list.innerHTML = html;
+            if (openId && document.getElementById(openId)) document.getElementById(openId).style.display = 'block';
+            list.scrollTop = scroll;
+        }
+
+        function toggleLayer(q) {
+            map.hasLayer(layers[q]) ? map.removeLayer(layers[q]) : map.addLayer(layers[q]);
+            renderMenu();
+        }
+
+        function toggleAccordion(id) {
+            const el = document.getElementById(`list-${id}`);
+            const state = el.style.display === 'block';
+            document.querySelectorAll('.address-list').forEach(d => d.style.display = 'none');
+            el.style.display = state ? 'none' : 'block';
+        }
+
+        function focusAddr(q, a) { const m = markersStore[q][a]; if(m) { map.setView(m.getLatLng(), 18); m.openPopup(); document.getElementById('qMenu').style.display = 'none'; }}
+        function focusNez(lat, lng) { map.setView([lat, lng], 18); document.getElementById('qMenu').style.display = 'none'; }
+        function toggleMenu() { const m = document.getElementById('qMenu'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
+        function toggleModal(id) { const m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; if(m.style.display === 'flex' && id === 'infoModal') showPage('page-main'); if(m.style.display === 'flex' && id === 'graphModal') refreshChart(); }
+        function refreshChart() { document.getElementById('chartImg').src = CHART_URL + "?t=" + Math.floor(Date.now() / 300000); }
+        function showPage(pageId) { document.querySelectorAll('.info-page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active'); }
+
+        updateData();
+    </script>
+</body>
+</html>
