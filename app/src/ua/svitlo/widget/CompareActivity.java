@@ -103,7 +103,7 @@ public class CompareActivity extends Activity {
                 TextView t = new TextView(this); t.setText("графіка ще немає"); t.setTextColor(Ui.HINT); t.setTextSize(14);
                 r.addView(t); miss.add(q.name);
             } else {
-                ImageView im = new ImageView(this); im.setImageBitmap(Bars.draw(iv, nowMin, barW, dens)); im.setAdjustViewBounds(true);
+                ImageView im = new ImageView(this); im.setImageBitmap(Bars.draw(this, iv, nowMin, barW, dens)); im.setAdjustViewBounds(true);
                 r.addView(im, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
                 known.add(q);
             }
@@ -129,7 +129,7 @@ public class CompareActivity extends Activity {
         }
         if (!miss.isEmpty() && !known.isEmpty()) Ui.text(this, out, "Без графіка: " + Prefs.join(miss).replace(",", ", "), 13, Ui.HINT, false).setPadding(Ui.dp(this, 4), Ui.dp(this, 6), 0, 0);
         List<String> qn = new ArrayList<>(); for (Data.Q q : qs) qn.add(q.name);
-        android.util.Log.i(TAG, "compare d" + day + " " + qn + " segs " + segs + " alloff " + allOff + " known " + known.size());
+        android.util.Log.i(TAG, "compare d" + day + " " + qn + " segs " + segs + " alloff " + allOff + " known " + known.size() + " bars " + (Bars.old(this) ? "old" : "new"));
     }
 
     String sig(Data d, List<Data.Q> known, int m) {
@@ -146,8 +146,8 @@ public class CompareActivity extends Activity {
         s.append(t); s.setSpan(new StyleSpan(Typeface.BOLD), 0, t.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         int bg;
         if (off.isEmpty()) { add(s, "\n🟡 Світло є всюди", 0xFFFFD866); bg = 0xFF1F2A1C; }
-        else if (on.isEmpty()) { add(s, "\n⚫ Відключено: " + join(off), 0xFFAEB7C1); if (known.size() > 1) add(s, "\n⚠️ Немає світла ніде", 0xFFFF7B6B); bg = 0xFF2E1F1F; }
-        else { add(s, "\n⚫ Відключено: " + join(off), 0xFFAEB7C1); add(s, "\n🟡 Світло є: " + join(on), 0xFFFFD866); bg = 0xFF262626; }
+        else if (on.isEmpty()) { add(s, "\n⚫ Відключено: " + join(off), Bars.old(this) ? 0xFFE8A33D : 0xFFAEB7C1); if (known.size() > 1) add(s, "\n⚠️ Немає світла ніде", 0xFFFF7B6B); bg = 0xFF2E1F1F; }
+        else { add(s, "\n⚫ Відключено: " + join(off), Bars.old(this) ? 0xFFE8A33D : 0xFFAEB7C1); add(s, "\n🟡 Світло є: " + join(on), 0xFFFFD866); bg = 0xFF262626; }
         TextView tv = new TextView(this); tv.setText(s); tv.setTextSize(15); tv.setTextColor(Ui.TEXT); tv.setLineSpacing(0, 1.1f);
         GradientDrawable g = new GradientDrawable(); g.setColor(bg); g.setCornerRadius(Ui.dp(this, 8)); tv.setBackgroundDrawable(g);
         int p = Ui.dp(this, 10); tv.setPadding(p, Ui.dp(this, 7), p, Ui.dp(this, 7));

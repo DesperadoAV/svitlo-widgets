@@ -59,6 +59,7 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView v, String url) {   // у застосунку — без підпису під картками сайту
                 v.evaluateJavascript("(function(){var e=document.querySelector('.ft');if(e)e.style.display='none';})()", null);
+                v.evaluateJavascript("window.svSetBars&&svSetBars('" + (Bars.old(MainActivity.this) ? "old" : "new") + "')", null);   // 🎨 сайт — у тому ж вигляді, що й застосунок
                 if (busy > 0) done(true);
             }
             @Override public boolean shouldOverrideUrlLoading(WebView v, String url) {
@@ -66,6 +67,7 @@ public class MainActivity extends Activity {
                 open(url); return true;                                        // інші (мапа, Telegram) — у браузері
             }
         });
+        web.addJavascriptInterface(new Bridge(), "SvitloApp");             // 🎨 сайт каже, який вигляд смужок вибрали
         root.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         setContentView(root);
         title.postDelayed(new Runnable() { @Override public void run() {   // для тестів: назва не залазить на рядок стану
@@ -79,6 +81,18 @@ public class MainActivity extends Activity {
         Notify.apply(this);                                                    // підписки на сповіщення — відновити, якщо злетіли
         if (getIntent().getBooleanExtra("test_refresh", false)) title.postDelayed(new Runnable() { @Override public void run() { refresh(); } }, 3000);
         checkUpdate(getIntent());
+    }
+
+    /** 🎨 «Вигляд смужок» вибирають на сайті (на головному екрані); так само малюються віджет і «Перетини». */
+    final class Bridge {
+        @android.webkit.JavascriptInterface public void bars(String v) { setBars(getApplicationContext(), "old".equals(v)); }
+    }
+    static void setBars(final android.content.Context c, boolean old) {
+        boolean same = Bars.old(c) == old;
+        android.util.Log.i("SvitloMain", "bars " + (old ? "old" : "new") + (same ? " (same)" : ""));
+        if (same) return;
+        Data.prefs(c).edit().putBoolean("bars_old", old).apply();
+        new Thread(new Runnable() { @Override public void run() { try { CardsWidget.updateAll(c); } catch (Exception ignored) { } } }).start();
     }
 
     @Override protected void onNewIntent(Intent i) { super.onNewIntent(i); setIntent(i); checkUpdate(i); }

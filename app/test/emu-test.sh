@@ -139,6 +139,16 @@ cmpcheck "…на завтра: 4 відрізки" "--es queues 3.2,6.1 --ei da
 cmpcheck "2.1 і 6.1 сьогодні: 14:00–18:00 — немає світла ніде" "--es queues 2.1,6.1 --ei day 0" "compare d0 [2.1, 6.1] segs 3 alloff 1 known 2" 09c_peretyny_nide
 cmpcheck "…завтра в 2.1 графіка ще немає — порівнюємо те, що є" "--es queues 2.1,6.1 --ei day 1" "compare d1 [2.1, 6.1] segs 1 alloff 0 known 1" 09d_bez_hrafika
 A shell input keyevent 4; sleep 1
+# 🎨 вигляд смужок «як раніше»: вибрали на сайті (головний екран) — так само малюють віджет і «Перетини»
+A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site-bars-old >/dev/null 2>&1; sleep 6
+check "сайт на головному екрані вибрав «як раніше» — застосунок запам'ятав" "A logcat -d -s SvitloMain:I | grep -q 'bars old'"
+check "…і після завантаження сайт отримує вибір застосунку" "A logcat -d | grep -q 'svSetBars old'"
+cmpcheck "«Перетини» — «як раніше» (помаранчеві відключення)" "--es queues 3.2,6.1 --ei day 0" "bars old" 10a_peretyny_yak_ranishe
+A shell input keyevent 3; sleep 3; shot 10b_vidzhet_yak_ranishe
+A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site-bars-new >/dev/null 2>&1; sleep 6
+check "…назад «жовто-сірий»" "A logcat -d -s SvitloMain:I | grep -q 'bars new'"
+cmpcheck "«Перетини» знову жовто-сірі" "--es queues 3.2,6.1 --ei day 0" "bars new" 10c_peretyny_zhovto_siri
+A shell input keyevent 4; sleep 1
 before=$(hits status.json)
 A shell am broadcast -n $PKG/.CardsWidget -a ua.svitlo.widget.REFRESH >/dev/null 2>&1
 check "кнопка ↻: дані завантажено ще раз" "waitfor '[ \$(hits status.json) -gt $before ]'"

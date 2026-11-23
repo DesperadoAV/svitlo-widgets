@@ -201,11 +201,11 @@ public class CardsWidget extends AppWidgetProvider {
         int[][] a = today ? dd[0] : dd[1];
         v.setTextViewText(R.id.t1, (today ? "Сьогодні: " : "Завтра: ") + Data.list(a));
         v.setViewVisibility(R.id.b1, a == null ? View.GONE : View.VISIBLE);
-        if (a != null) v.setImageViewBitmap(R.id.b1, Bars.draw(a, today ? d.kyivMin(now) : -1, barW, dens));
+        if (a != null) v.setImageViewBitmap(R.id.b1, Bars.draw(c, a, today ? d.kyivMin(now) : -1, barW, dens));
         boolean two = both && today && dd[1] != null;
         v.setViewVisibility(R.id.t2, two ? View.VISIBLE : View.GONE);
         v.setViewVisibility(R.id.b2, two ? View.VISIBLE : View.GONE);
-        if (two) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(dd[1])); v.setImageViewBitmap(R.id.b2, Bars.draw(dd[1], -1, barW, dens)); }
+        if (two) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(dd[1])); v.setImageViewBitmap(R.id.b2, Bars.draw(c, dd[1], -1, barW, dens)); }
         if (big) {                                                  // одна черга на весь віджет — шрифт більший
             int sp = android.util.TypedValue.COMPLEX_UNIT_SP;
             v.setTextViewTextSize(R.id.name, sp, 20); v.setTextViewTextSize(R.id.since, sp, 14); v.setTextViewTextSize(R.id.status, sp, 18);
@@ -468,11 +468,11 @@ public class CardsWidget extends AppWidgetProvider {
             int[][] a = sh <= 0 ? q.today : sh == 1 ? q.tomorrow : null, b = sh <= 0 ? q.tomorrow : null;
             v.setTextViewText(R.id.t1, "Сьогодні: " + Data.list(a));
             v.setViewVisibility(R.id.b1, a == null ? View.GONE : View.VISIBLE);
-            if (a != null) v.setImageViewBitmap(R.id.b1, Bars.draw(a, d.kyivMin(now), barW, dens));
+            if (a != null) v.setImageViewBitmap(R.id.b1, Bars.draw(c, a, d.kyivMin(now), barW, dens));
             boolean hasB = ex2 && b != null;
             v.setViewVisibility(R.id.t2, hasB ? View.VISIBLE : View.GONE);
             v.setViewVisibility(R.id.b2, hasB ? View.VISIBLE : View.GONE);
-            if (hasB) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(b)); v.setImageViewBitmap(R.id.b2, Bars.draw(b, -1, barW, dens)); }
+            if (hasB) { v.setTextViewText(R.id.t2, "Завтра: " + Data.list(b)); v.setImageViewBitmap(R.id.b2, Bars.draw(c, b, -1, barW, dens)); }
         }
         if (inList) { v.setOnClickFillInIntent(R.id.card, new Intent().putExtra(EXTRA_Q, q.name)); return v; }
         Intent t = new Intent(c, CardsWidget.class).setAction(A_TOGGLE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id).putExtra(EXTRA_Q, q.name)
