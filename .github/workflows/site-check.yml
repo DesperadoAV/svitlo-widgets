@@ -7,7 +7,7 @@ on:
     inputs:
       ver:
         description: 'Яку версію основного воркера чекати'
-        default: '4.1.2'
+        default: '4.1.3'
 
 jobs:
   check:
@@ -31,7 +31,8 @@ jobs:
           echo "$h" | grep -q 'id="vw"' && echo "$h" | grep -q 'html.clr-old{--seg:#e8a33d' && ok "перемикач вигляду смужок: «жовто-сірий» / «як раніше»" || bad "немає перемикача вигляду смужок"
           echo "$h" | grep -o 'window.SV_DATA=.*;window.SV_CFG' | sed 's/window.SV_DATA=//; s/;window.SV_CFG//' | jq -r '.queues[] | "   черга \(.name): \(.state)"' || true
           m=$(curl -sS --max-time 20 "$SITE/manifest.webmanifest" | jq -r .name 2>/dev/null); [ "$m" = "💡 Світло В Славутичі" ] && ok "manifest: $m" || bad "manifest: $m"
-          t=$(curl -sS -o /dev/null -w '%{content_type} %{size_download}' "$SITE/icon-512.png"); echo "$t" | grep -q '^image/png' && ok "значок: $t" || bad "значок: $t"
+          t=$(curl -sS -o /dev/null -w '%{content_type} %{size_download}' "$SITE/icon-512.png?v=2"); echo "$t" | grep -q '^image/png' && ok "значок: $t" || bad "значок: $t"
+          curl -sS "$SITE/manifest.webmanifest" | grep -q 'icon-mask-512.png?v=2' && ok "значки сайту — лампочка, як у застосунку (?v=2)" || bad "у manifest старі значки"
           curl -sS --max-time 20 "$SITE/sw.js" | grep -q showNotification && ok "помічник сповіщень /sw.js" || bad "/sw.js"
           k=$(curl -sS --max-time 20 -H "Origin: $SITE" -D hdr.txt "$PUB/wp/key" | jq -r .key 2>/dev/null)
           [ ${#k} -ge 80 ] && grep -qi 'access-control-allow-origin: \*' hdr.txt && ok "бот: ключ сповіщень є, сайту дозволено (${k:0:12}…)" || bad "бот /wp/key: $k"
