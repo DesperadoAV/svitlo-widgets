@@ -7,7 +7,7 @@ on:
     inputs:
       ver:
         description: 'Яку версію основного воркера чекати'
-        default: '4.1.5'
+        default: '4.1.6'
 
 jobs:
   check:
@@ -29,6 +29,7 @@ jobs:
           echo "$h" | grep -o '"push":"[^"]*"' | head -1
           echo "$h" | grep -q -- '--seg:#a3acb6;--bar:#ffd43b' && echo "$h" | grep -q '.bar.nd{' && ok "смужки: жовте — світло є, сірі — відключення" || bad "кольори смужок не ті"
           echo "$h" | grep -q 'id="vw"' && echo "$h" | grep -q 'html.clr-old{--seg:#e8a33d' && ok "перемикач вигляду смужок: «жовто-сірий» / «як раніше»" || bad "немає перемикача вигляду смужок"
+          echo "$h" | grep -q '<div class="hrow"><button type="button" id="wgt" hidden>➕ Віджет</button><button type="button" id="inst" hidden>📲 Встановити</button>' && echo "$h" | grep -q "SvitloApp.notifyGet" && ok "верх: Встановити/Віджет · час · ↻; сповіщення застосунку — через сайт" || bad "верх сайту не той"
           echo "$h" | grep -o 'window.SV_DATA=.*;window.SV_CFG' | sed 's/window.SV_DATA=//; s/;window.SV_CFG//' | jq -r '.queues[] | "   черга \(.name): \(.state)"' || true
           m=$(curl -sS --max-time 20 "$SITE/manifest.webmanifest" | jq -r .name 2>/dev/null); [ "$m" = "💡 Світло В Славутичі" ] && ok "manifest: $m" || bad "manifest: $m"
           t=$(curl -sS -o /dev/null -w '%{content_type} %{size_download}' "$SITE/icon-512.png?v=2"); echo "$t" | grep -q '^image/png' && ok "значок: $t" || bad "значок: $t"

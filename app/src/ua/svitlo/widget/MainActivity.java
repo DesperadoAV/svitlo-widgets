@@ -2,22 +2,33 @@ package ua.svitlo.widget;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Головний екран: сайт із картками черг і мапою + кнопки «Мапа» і «Додати віджет». */
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Головний екран — сайт: назва, «➕ Віджет», час оновлення й ↻, черги, перетини, сповіщення, мапа (вкладки внизу).
+ * Своєї панелі вгорі немає — лише смужка «📲 Доступна нова версія», коли вона є. Сайт кличе застосунок через SvitloApp:
+ * додати віджет, оновити дані віджета, сповіщення (Firebase) і вигляд смужок.
+ */
 public class MainActivity extends Activity {
-    WebView web; String testSite; android.widget.Button rf; android.widget.ProgressBar pb; int busy; TextView upd; Update.Info newer;
+    WebView web; String testSite; TextView upd; Update.Info newer;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -28,31 +39,16 @@ public class MainActivity extends Activity {
         testSite = getIntent().getStringExtra("site_url");                    // для тестів: тестовий сайт замість справжнього
 
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Ui.BG);
-        int p = Ui.dp(this, 8); Ui.insets(root, p, p, p, 0);                  // не залазити під рядок стану (Android 15+)
-        final TextView title = Ui.text(this, root, "💡 Світло В Славутичі", 20, Ui.ACCENT, true);
-        title.setPadding(Ui.dp(this, 4), 0, 0, Ui.dp(this, 4));
-        title.setOnLongClickListener(new android.view.View.OnLongClickListener() { @Override public boolean onLongClick(android.view.View v) { askUrl(); return true; } });
-        LinearLayout row = new LinearLayout(this); root.addView(row);
-        small(Ui.button(this, row, "🗺 Мапа", 0xFF3A3A3A, 1)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { open(site(true)); } });
-        small(Ui.button(this, row, "🗓 Перетини", 0xFF3A3A3A, 1.6f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, CompareActivity.class)); } });
-        small(Ui.button(this, row, "➕ Віджет", 0xFF2980B9, 1.25f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { addWidget(); } });
-        small(Ui.button(this, row, "🔔", 0xFF3A3A3A, 0.55f)).setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startActivity(new Intent(MainActivity.this, NotifyActivity.class)); } });
-        android.widget.FrameLayout fl = new android.widget.FrameLayout(this);          // ↻ і кружечок, що крутиться поверх нього
-        LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.55f);
-        fp.setMargins(Ui.dp(this, 3), Ui.dp(this, 4), Ui.dp(this, 3), Ui.dp(this, 4)); row.addView(fl, fp);
-        rf = small(Ui.button(this, fl, "↻", 0xFF3A3A3A, 0));
-        pb = new android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleSmall); pb.setIndeterminate(true); pb.setVisibility(android.view.View.GONE);
-        if (Build.VERSION.SDK_INT >= 21) { pb.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(0xFFFFFFFF)); pb.setTranslationZ(Ui.dp(this, 8)); }
-        fl.addView(pb, new android.widget.FrameLayout.LayoutParams(Ui.dp(this, 18), Ui.dp(this, 18), android.view.Gravity.CENTER));
-        rf.setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { refresh(); } });
+        Ui.insets(root, 0, 0, 0, 0);                                           // не залазити під рядок стану (Android 15+)
         // 📲 смужка «Доступна нова версія» (з'являється, лише коли є новіша)
         upd = Ui.text(this, root, "", 15, 0xFFFFFFFF, true);
         android.graphics.drawable.GradientDrawable ug = new android.graphics.drawable.GradientDrawable(); ug.setColor(0xFF2980B9); ug.setCornerRadius(Ui.dp(this, 10));
         upd.setBackgroundDrawable(ug); upd.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
-        ((LinearLayout.LayoutParams) upd.getLayoutParams()).setMargins(Ui.dp(this, 3), Ui.dp(this, 2), Ui.dp(this, 3), Ui.dp(this, 6));
+        ((LinearLayout.LayoutParams) upd.getLayoutParams()).setMargins(Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 4));
         upd.setVisibility(android.view.View.GONE);
         upd.setOnClickListener(new android.view.View.OnClickListener() { @Override public void onClick(android.view.View v) { startUpdate(); } });
         web = new WebView(this);
+        web.setBackgroundColor(Ui.BG);
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
         web.getSettings().setUserAgentString(web.getSettings().getUserAgentString() + " SvitloApp/" + BuildConfig.VERSION_NAME);   // сайт знає: оновлення — справа застосунку
@@ -60,33 +56,106 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView v, String url) {   // у застосунку — без підпису під картками сайту
                 v.evaluateJavascript("(function(){var e=document.querySelector('.ft');if(e)e.style.display='none';})()", null);
                 v.evaluateJavascript("window.svSetBars&&svSetBars('" + (Bars.old(MainActivity.this) ? "old" : "new") + "')", null);   // 🎨 сайт — у тому ж вигляді, що й застосунок
-                if (busy > 0) done(true);
             }
             @Override public boolean shouldOverrideUrlLoading(WebView v, String url) {
                 if (url.startsWith(site(false))) return false;                // сторінки сайту — тут
-                open(url); return true;                                        // інші (мапа, Telegram) — у браузері
+                open(url); return true;                                        // інші (мапа окремо, Telegram) — у браузері
             }
         });
-        web.addJavascriptInterface(new Bridge(), "SvitloApp");             // 🎨 сайт каже, який вигляд смужок вибрали
+        web.addJavascriptInterface(new Bridge(), "SvitloApp");             // сайт кличе застосунок: віджет, ↻, сповіщення, вигляд смужок
         root.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         setContentView(root);
-        title.postDelayed(new Runnable() { @Override public void run() {   // для тестів: назва не залазить на рядок стану
-            int[] l = new int[2]; title.getLocationOnScreen(l);
+        web.postDelayed(new Runnable() { @Override public void run() {     // для тестів: сайт (з назвою) не залазить на рядок стану
+            int[] l = new int[2]; web.getLocationOnScreen(l);
             int id = getResources().getIdentifier("status_bar_height", "dimen", "android"), sb = id > 0 ? getResources().getDimensionPixelSize(id) : 0;
-            android.util.Log.i("SvitloMain", "title_y " + l[1] + " statusbar " + sb + (l[1] >= sb ? " OK" : " OVERLAP"));
+            android.util.Log.i("SvitloMain", "web_y " + l[1] + " statusbar " + sb + (l[1] >= sb ? " OK" : " OVERLAP"));
         } }, 2000);
         web.loadUrl(site(false));
         CardsWidget.fetchAsync(this, null);
         Notify.channels(this);
         Notify.apply(this);                                                    // підписки на сповіщення — відновити, якщо злетіли
-        if (getIntent().getBooleanExtra("test_refresh", false)) title.postDelayed(new Runnable() { @Override public void run() { refresh(); } }, 3000);
+        if (getIntent().getBooleanExtra("test_refresh", false)) web.postDelayed(new Runnable() { @Override public void run() { widgetRefresh(); } }, 3000);
         checkUpdate(getIntent());
     }
 
-    /** 🎨 «Вигляд смужок» вибирають на сайті (на головному екрані); так само малюються віджет і «Перетини». */
+    /** Що сайт може попросити в застосунку (кнопки сайту на головному екрані). */
     final class Bridge {
         @android.webkit.JavascriptInterface public void bars(String v) { setBars(getApplicationContext(), "old".equals(v)); }
+        @android.webkit.JavascriptInterface public void addWidget() { runOnUiThread(new Runnable() { @Override public void run() { MainActivity.this.addWidget(); } }); }
+        @android.webkit.JavascriptInterface public void refresh() { widgetRefresh(); }
+        @android.webkit.JavascriptInterface public String notifyGet() { return notifyState(); }
+        @android.webkit.JavascriptInterface public void notifySave(String json) { notifySaveJs(json); }
+        @android.webkit.JavascriptInterface public void notifyTest() { runOnUiThread(new Runnable() { @Override public void run() { notifyTestJs(); } }); }
     }
+
+    /** ↻ на сайті: сайт оновлює себе сам, а застосунок — дані віджета. */
+    void widgetRefresh() {
+        android.util.Log.i("SvitloMain", "refresh widget");
+        new Thread(new Runnable() { @Override public void run() {
+            boolean ok = false;
+            try { ok = Data.fetch(MainActivity.this); CardsWidget.updateAll(MainActivity.this); } catch (Exception ignored) { }
+            android.util.Log.i("SvitloMain", "refresh widget " + (ok ? "ok" : "fail"));
+        } }).start();
+    }
+
+    // ---------- 🔔 сповіщення (вкладка «Сповіщення» сайту; ті самі налаштування, що й у NotifyActivity) ----------
+    String notifyState() {
+        try {
+            List<String> q = Notify.queues(this); String why = Notify.unavailable(this);
+            return new JSONObject().put("on", !q.isEmpty()).put("queues", new JSONArray(q)).put("warn", Notify.warn(this)).put("sched", Notify.sched(this)).put("why", why == null ? "" : why).toString();
+        } catch (Exception e) { return "{}"; }
+    }
+    void notifySaveJs(String json) {
+        try {
+            JSONObject o = new JSONObject(json); JSONArray a = o.optJSONArray("queues"); List<String> qs = new ArrayList<>();
+            if (a != null) for (int i = 0; i < a.length(); i++) qs.add(a.getString(i));
+            Notify.save(this, qs, o.optBoolean("warn", true), o.optBoolean("sched", true));
+            android.util.Log.i("SvitloMain", "notify save " + qs + " warn " + o.optBoolean("warn", true) + " sched " + o.optBoolean("sched", true));
+            if (!qs.isEmpty() && Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                runOnUiThread(new Runnable() { @Override public void run() { requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 6); } });
+                return;                                                        // відповідь сайту — після дозволу (onRequestPermissionsResult)
+            }
+            notifyDone(null);
+        } catch (Exception e) { notifyDone(String.valueOf(e.getMessage())); }
+    }
+    void notifyDone(String err) {
+        try {
+            JSONObject r = err == null ? new JSONObject().put("ok", true).put("perm", allowed() ? "granted" : "denied") : new JSONObject().put("ok", false).put("error", err);
+            js("window.svNotifyDone&&svNotifyDone(" + JSONObject.quote(r.toString()) + ")");
+        } catch (Exception ignored) { }
+    }
+    boolean allowed() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) return false;
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        return nm == null || Build.VERSION.SDK_INT < 24 || nm.areNotificationsEnabled();
+    }
+    @Override public void onRequestPermissionsResult(int code, String[] perms, int[] res) { if (code == 6) notifyDone(null); }
+    /** «Пробне»: справжнє сповіщення через сервер і Firebase; не вийшло — показуємо, як виглядатиме, і чому. */
+    void notifyTestJs() {
+        String why = Notify.unavailable(this);
+        if (why != null) { notifyLocal(why); return; }
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new com.google.android.gms.tasks.OnCompleteListener<String>() {
+                @Override public void onComplete(com.google.android.gms.tasks.Task<String> t) {
+                    if (!t.isSuccessful() || t.getResult() == null) { notifyLocal("Firebase не видав телефону ідентифікатор"); return; }
+                    final String tok = t.getResult();
+                    new Thread(new Runnable() { @Override public void run() {
+                        String err = Notify.pushTest(MainActivity.this, tok);
+                        if (err == null) notifyMsg("✅ Сервер надіслав пробне сповіщення — воно має з'явитися за кілька секунд.", true); else notifyLocal(err);
+                    } }).start();
+                }
+            });
+        } catch (Exception e) { notifyLocal(String.valueOf(e.getMessage())); }
+    }
+    void notifyLocal(String why) {
+        List<String> sel = Notify.queues(this); String q = sel.isEmpty() ? "3.2" : sel.get(0);
+        Notify.show(this, "warn", q, "⏰ Черга " + q + ": за 10 хв відключення", "Так виглядатиме сповіщення (це перевірка)");
+        notifyMsg("Показано, як виглядатиме сповіщення. Через сервер не вийшло: " + why, false);
+    }
+    void notifyMsg(String text, boolean ok) { js("window.svNotifyMsg&&svNotifyMsg(" + JSONObject.quote(text) + "," + ok + ")"); }
+    void js(final String code) { runOnUiThread(new Runnable() { @Override public void run() { if (web != null) web.evaluateJavascript(code, null); } }); }
+
+    /** 🎨 «Вигляд смужок» вибирають на сайті; так само малюються віджет і «Перетини». */
     static void setBars(final android.content.Context c, boolean old) {
         boolean same = Bars.old(c) == old;
         android.util.Log.i("SvitloMain", "bars " + (old ? "old" : "new") + (same ? " (same)" : ""));
@@ -118,39 +187,6 @@ public class MainActivity extends Activity {
         android.widget.Toast.makeText(this, "Завантажую нову версію — хід видно в шторці", android.widget.Toast.LENGTH_LONG).show();
     }
 
-    /** ↻: сайт і дані віджета — заново; значок крутиться, доки обидва не оновляться, потім на мить ✓ (або ⚠). */
-    void refresh() {
-        if (busy > 0) return;
-        busy = 2; rf.setEnabled(false); rf.setText(""); pb.setVisibility(android.view.View.VISIBLE);
-        android.util.Log.i("SvitloMain", "refresh spin");
-        web.reload();
-        new Thread(new Runnable() { @Override public void run() {
-            boolean ok = false;
-            try { ok = Data.fetch(MainActivity.this); CardsWidget.updateAll(MainActivity.this); } catch (Exception ignored) { }
-            final boolean r = ok;
-            runOnUiThread(new Runnable() { @Override public void run() { done(r); } });
-        } }).start();
-        rf.postDelayed(new Runnable() { @Override public void run() { if (busy > 0) { busy = 1; done(false); } } }, 20000);   // не крутиться вічно
-    }
-    void done(boolean ok) {
-        if (busy <= 0 || --busy > 0) { if (!ok && busy > 0) failed = true; return; }
-        pb.setVisibility(android.view.View.GONE); final boolean good = ok && !failed; failed = false;
-        rf.setText(good ? "✓" : "⚠"); rf.setTextColor(good ? 0xFF2ECC71 : 0xFFFF9F43);
-        android.util.Log.i("SvitloMain", "refresh done " + (good ? "ok" : "fail"));
-        rf.postDelayed(new Runnable() { @Override public void run() { rf.setText("↻"); rf.setTextColor(0xFFFFFFFF); rf.setEnabled(true); } }, 1200);
-    }
-    boolean failed;
-
-    /** Кнопки верхнього ряду — в один рядок (на вузьких екранах текст зменшується, а не обрізається). */
-    android.widget.Button small(android.widget.Button b) {
-        int p = Ui.dp(this, 5); b.setPadding(p, Ui.dp(this, 9), p, Ui.dp(this, 9));
-        b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
-        Ui.fit(b, 14);
-        if (b.getLayoutParams() instanceof android.widget.LinearLayout.LayoutParams) ((android.widget.LinearLayout.LayoutParams) b.getLayoutParams()).setMargins(Ui.dp(this, 3), Ui.dp(this, 4), Ui.dp(this, 3), Ui.dp(this, 4));
-        else ((ViewGroup.MarginLayoutParams) b.getLayoutParams()).setMargins(0, 0, 0, 0);
-        return b;
-    }
-
     String site(boolean map) {
         if (testSite != null) return map ? testSite + "map" : testSite;
         Data d = Data.cached(this);
@@ -162,19 +198,12 @@ public class MainActivity extends Activity {
     void addWidget() {
         if (Build.VERSION.SDK_INT >= 26) {
             AppWidgetManager m = getSystemService(AppWidgetManager.class);
-            if (m != null && m.isRequestPinAppWidgetSupported()) { m.requestPinAppWidget(new ComponentName(this, CardsWidget.class), null, null); return; }
+            if (m != null && m.isRequestPinAppWidgetSupported()) { android.util.Log.i("SvitloMain", "addWidget pin"); m.requestPinAppWidget(new ComponentName(this, CardsWidget.class), null, null); return; }
         }
+        android.util.Log.i("SvitloMain", "addWidget dialog");
         new AlertDialog.Builder(this).setTitle("Як додати віджет")
             .setMessage("1. Затисніть пальцем порожнє місце на робочому столі.\n2. Виберіть «Віджети».\n3. Знайдіть «Світло В Славутичі» і перетягніть на стіл.\n4. Позначте свої черги і натисніть «Зберегти».")
             .setPositiveButton("Зрозуміло", null).show();
-    }
-
-    void askUrl() {                                                            // приховане налаштування: адреса даних
-        final EditText e = new EditText(this); e.setText(Data.url(this));
-        new AlertDialog.Builder(this).setTitle("Адреса даних").setView(e)
-            .setPositiveButton("Зберегти", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) { Data.prefs(MainActivity.this).edit().putString("data_url", e.getText().toString().trim()).apply(); CardsWidget.fetchAsync(MainActivity.this, null); } })
-            .setNeutralButton("Стандартна", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) { Data.prefs(MainActivity.this).edit().remove("data_url").apply(); CardsWidget.fetchAsync(MainActivity.this, null); } })
-            .setNegativeButton("Скасувати", null).show();
     }
 
     @Override public void onBackPressed() { if (web != null && web.canGoBack()) web.goBack(); else super.onBackPressed(); }

@@ -33,7 +33,7 @@ check "застосунок завантажив дані з тестового 
 sleep 3                                                        # дані збережено — далі віджет
 sleep 3; shot 01_holovnyi
 check "головний екран відкрив тестовий сайт (не справжній)" "[ \$(hits /site) -ge 1 ]"
-check "назва не залазить на рядок стану ($(A logcat -d -s SvitloMain:I | grep -o 'title_y.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'title_y.* OK'"
+check "сайт (з назвою вгорі) не залазить на рядок стану ($(A logcat -d -s SvitloMain:I | grep -o 'web_y.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'web_y.* OK'"
 # 📲 самооновлення: тестовий сервер каже «є версія 1.1.9999» → смужка на головному екрані → завантаження → встановлення
 A logcat -c
 A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site --es update_url $T/latest.json >/dev/null 2>&1; sleep 6
@@ -55,7 +55,7 @@ check "📢 оголошення — показано всім (без черг�
 A shell input keyevent 4; sleep 1
 # ↻ на головному екрані: поки оновлюється — крутиться, потім ✓
 A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site --ez test_refresh true >/dev/null 2>&1; sleep 8
-check "↻ на головному екрані: крутиться, доки оновлюється, потім ✓ ($(A logcat -d -s SvitloMain:I | grep -o 'refresh .*' | tr '\n' ' '))" "A logcat -d -s SvitloMain:I | grep -q 'refresh spin' && A logcat -d -s SvitloMain:I | grep -q 'refresh done ok'"
+check "↻ (на сайті) — застосунок заодно оновлює дані віджета ($(A logcat -d -s SvitloMain:I | grep -o 'refresh widget.*' | tr '\n' ' '))" "A logcat -d -s SvitloMain:I | grep -q 'refresh widget ok'"
 A shell am start -S -W -n $PKG/.PreviewActivity >/dev/null 2>&1; sleep 4
 shot 02_vidzhet
 check "віджет: звичайний вигляд — ↻ без кружечка" "A logcat -d -s SvitloPreview:I | grep 'spin' | tail -1 | grep -q 'spin false'"
@@ -149,6 +149,21 @@ A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es s
 check "…назад «жовто-сірий»" "A logcat -d -s SvitloMain:I | grep -q 'bars new'"
 cmpcheck "«Перетини» знову жовто-сірі" "--es queues 3.2,6.1 --ei day 0" "bars new" 10c_peretyny_zhovto_siri
 A shell input keyevent 4; sleep 1
+# 🔔 вкладка «Сповіщення» сайту на головному екрані вмикає сповіщення застосунку (ті самі налаштування, що й у NotifyActivity)
+[ "$API" -ge 33 ] && A shell pm grant $PKG android.permission.POST_NOTIFICATIONS >/dev/null 2>&1
+A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site-nsave >/dev/null 2>&1; sleep 6
+check "сайт бачить налаштування сповіщень застосунку" "A logcat -d | grep -q 'notifyGet {'"
+check "«Увімкнути» на сайті — застосунок зберіг черги 3.2 і 6.1, без графіка на завтра" "A logcat -d -s SvitloMain:I | grep -q 'notify save \[3.2, 6.1\] warn true sched false'"
+check "…і відповів сайту «збережено»" "A logcat -d | grep -q 'svNotifyDone.*ok.:true'"
+A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site-nget >/dev/null 2>&1; sleep 5
+check "…після перезапуску сайт бачить збережене (3.2, 6.1)" "A logcat -d | grep 'notifyGet' | grep -q '6.1'"
+# ➕ Віджет і ↻ — кнопки сайту вгорі
+RW0=$(A logcat -d -s SvitloMain:I | grep -c 'refresh widget ok')
+A shell am start -S -W -n $PKG/.MainActivity --es data_url $T/status.json --es site_url $T/site-wr >/dev/null 2>&1; sleep 6
+check "«➕ Віджет» на сайті — застосунок пропонує додати віджет ($(A logcat -d -s SvitloMain:I | grep -o 'addWidget.*' | tail -1))" "A logcat -d -s SvitloMain:I | grep -q 'addWidget'"
+check "↻ на сайті — застосунок оновив дані віджета" "[ \$(A logcat -d -s SvitloMain:I | grep -c 'refresh widget ok') -gt $RW0 ]"
+shot 11_dodaty_vidzhet
+A shell input keyevent 4; sleep 1; A shell input keyevent 4; sleep 1
 before=$(hits status.json)
 A shell am broadcast -n $PKG/.CardsWidget -a ua.svitlo.widget.REFRESH >/dev/null 2>&1
 check "кнопка ↻: дані завантажено ще раз" "waitfor '[ \$(hits status.json) -gt $before ]'"

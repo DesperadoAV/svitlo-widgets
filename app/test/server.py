@@ -16,7 +16,13 @@ class H(BaseHTTPRequestHandler):
                  "<h2>Тестовий сайт</h2><p>(справжній сайт у тестах не відкриваємо)</p>"
                  # 🎨 як справжній сайт: застосунок каже вибраний вигляд (svSetBars), а /site-bars-old|new — ніби людина натиснула перемикач
                  "<script>window.svSetBars=function(v){console.log('svSetBars '+v)};"
-                 "var m=/bars-(old|new)/.exec(location.pathname);if(m&&window.SvitloApp)SvitloApp.bars(m[1]);</script>").encode()
+                 "var m=/bars-(old|new)/.exec(location.pathname);if(m&&window.SvitloApp)SvitloApp.bars(m[1]);"
+                 # 🔔 /site-nget — сайт питає налаштування сповіщень; /site-nsave — ніби натиснули «Увімкнути» (3.2, 6.1, без графіка на завтра)
+                 "var p=location.pathname,A=window.SvitloApp;"
+                 "if(A&&/site-n(get|save)/.test(p))console.log('notifyGet '+A.notifyGet());"
+                 "if(A&&/site-nsave/.test(p)){window.svNotifyDone=function(r){console.log('svNotifyDone '+r)};A.notifySave(JSON.stringify({queues:['3.2','6.1'],warn:true,sched:false}));}"
+                 # ➕ /site-wr — ніби натиснули «➕ Віджет» і ↻
+                 "if(A&&/site-wr/.test(p)){A.addWidget();A.refresh();}</script>").encode()
             self.send_response(200); self.send_header("content-type", "text/html; charset=utf-8"); self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b); return
         now = int(time.time() * 1000)
         q = lambda n, s, ago, t, tm: {"name": n, "state": s, "since": now - ago * 60000 if ago else None, "today": t, "tomorrow": tm}
