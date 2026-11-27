@@ -1,0 +1,25 @@
+name: probe-oblenergo
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe official sources (read-only)
+        run: |
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+          for u in https://chernihivoblenergo.com.ua/blackouts https://www.chernihivoblenergo.com.ua/blackouts https://cn.e-svitlo.com.ua/ ; do
+            echo "=== $u"; curl -sSL -m 30 -A "$UA" -o page.html -w "HTTP %{http_code} size %{size_download} final %{url_effective}\n" "$u" || echo "FAIL $?"
+            [ -s page.html ] || continue
+            grep -oiE '<title>[^<]*' page.html | head -2
+            echo "-- scripts"; grep -oiE '<script[^>]+src="[^"]+"' page.html | head -30
+            echo "-- iframes"; grep -oiE '<iframe[^>]+src="[^"]+"' page.html | head -10
+            echo "-- api-like urls"; grep -oiE "(https?:)?//[^\"' <>]*(api|json|ajax|gpv|graph|grafik|schedule|queue|cherg|outage|disconn)[^\"' <>]*" page.html | sort -u | head -40
+            echo "-- fetch/axios"; grep -oiE "(fetch|axios\.(get|post)|\\\$\.(get|post|ajax))\([^)]{0,160}" page.html | head -20
+            echo "-- forms"; grep -oiE '<form[^>]*>' page.html | head -10
+            echo "-- keywords"; grep -oiE ".{0,80}(ГПВ|черг[аи]|підчерг|графік погодинних).{0,80}" page.html | head -15
+            for js in $(grep -oiE '<script[^>]+src="[^"]+"' page.html | sed -E 's/.*src="([^"]+)"/\1/' | grep -viE 'google|facebook|gtag|jquery|bootstrap|recaptcha' | head -8); do
+              case "$js" in http*) J="$js";; //*) J="https:$js";; /*) J="$(echo "$u" | cut -d/ -f1-3)$js";; *) J="$(echo "$u" | cut -d/ -f1-3)/$js";; esac
+              echo "== JS $J"; curl -sSL -m 30 -A "$UA" "$J" -o s.js -w "HTTP %{http_code} size %{size_download}\n"
+              grep -oiE "[\"'][^\"' ]*(/api/|\.json|ajax|gpv|grafik|schedule|queue|cherg|outage|disconn)[^\"' ]*[\"']" s.js | sort -u | head -25
+            done
+          done
