@@ -7,7 +7,7 @@ on:
     inputs:
       ver:
         description: 'Яку версію основного воркера чекати'
-        default: '4.1.8'
+        default: '4.1.9'
 
 jobs:
   check:
