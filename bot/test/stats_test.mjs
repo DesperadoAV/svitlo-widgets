@@ -73,6 +73,21 @@ await WG("SvitloWidget/1.1.32 (Android 17)","abcdefghij12"); await WG("SvitloWid
 ({j}=await st());
 chk("…нові версії з анонімним номером: два різні телефони з однаковими версіями рахуються окремо (усього 5)", j.app.d0.n===5 && j.app.d0.byVer["1.1.32"]===2, JSON.stringify(j.app));
 chk("…у статистиці немає самих номерів телефонів", !/abcdefghij12|zyxwvutsrq98/.test(JSON.stringify(j)));
+chk("…оновлень даних від застосунків сьогодні 7 (кожен запит)", j.app.d0.req===7, j.app.d0.req);
+// віджети на екрані (нові версії кажуть, скільки їх)
+const WW=async(id,w)=>{ NOW+=60000; await B("/status.json",{headers:{"user-agent":"SvitloWidget/1.1.33 (Android 15)","x-svitlo-device":id,"x-svitlo-widgets":String(w)}}); };
+await WW("aaaaaaaaaaaa1111",2); await WW("bbbbbbbbbbbb2222",0); await WW("bbbbbbbbbbbb2222",1);
+({j}=await st());
+chk("…віджети: з двох телефонів нової версії віджет є на обох (другий щойно поставив), відомо для 2", j.app.d0.withWidget===2 && j.app.d0.wKnown===2 && j.app.d0.n===7, JSON.stringify(j.app.d0));
+// розсилки в застосунок (Firebase) — у тому ж блоці
+sqlite.prepare("INSERT INTO daily(day,k,n) VALUES(?,'app',3) ON CONFLICT(day,k) DO UPDATE SET n=n+3").run(j.days[13].day);
+({j}=await st());
+chk("…розсилок у застосунок сьогодні 3", j.app.d0.push===3, j.app.d0.push);
+// стара таблиця без колонки w (облік першої версії) — доповнюється сама
+sqlite.prepare("DROP TABLE appdev").run(); sqlite.prepare("CREATE TABLE appdev (day TEXT, k TEXT, ver TEXT, PRIMARY KEY (day, k))").run();
+const { default: bot2 } = await import(new URL('../worker.js?again=1', import.meta.url));
+await bot2.fetch(new Request("https://pub.test/status.json",{headers:{"user-agent":"SvitloWidget/1.1.33 (Android 15)","x-svitlo-device":"cccccccccccc3333","x-svitlo-widgets":"1"}}),penv,{waitUntil:x=>W.push(x)}); await Promise.all(W); W=[];
+chk("…стара таблиця доповнилась колонкою w і запис пройшов", sqlite.prepare("SELECT w FROM appdev WHERE k='id:cccccccccccc3333'").get()?.w===1);
 // старше 60 днів прибирається раз на добу
 sqlite.prepare("INSERT INTO dau(day,chat_id) VALUES('2026-01-01',1)").run(); sqlite.prepare("INSERT INTO daily(day,k,n) VALUES('2026-01-01','act',9)").run();
 sqlite.prepare("DELETE FROM kv WHERE k='pub:clean'").run(); await cron();

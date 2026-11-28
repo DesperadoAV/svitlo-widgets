@@ -55,8 +55,9 @@ async function init(env) {
     env.DB.prepare("CREATE TABLE IF NOT EXISTS wpout (id INTEGER PRIMARY KEY AUTOINCREMENT, sid INTEGER, payload TEXT, at INTEGER, claim INTEGER DEFAULT 0, tries INTEGER DEFAULT 0)"),
     env.DB.prepare("CREATE TABLE IF NOT EXISTS dau (day TEXT, chat_id INTEGER, PRIMARY KEY (day, chat_id))"),          // хто був активний за день (для статистики адмінів)
     env.DB.prepare("CREATE TABLE IF NOT EXISTS daily (day TEXT, k TEXT, n INTEGER DEFAULT 0, PRIMARY KEY (day, k))"),  // скільки за день: act — дій у боті, tg/web/app — надісланих сповіщень
-    env.DB.prepare("CREATE TABLE IF NOT EXISTS appdev (day TEXT, k TEXT, ver TEXT, PRIMARY KEY (day, k))"),           // телефони із застосунком (віджет), без жодних даних про людину               // черга сповіщень у браузери
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS appdev (day TEXT, k TEXT, ver TEXT, w INTEGER DEFAULT -1, PRIMARY KEY (day, k))"),   // телефони із застосунком: версія, віджетів на екрані (-1 — невідомо)
   ]);
+  try { await env.DB.prepare("ALTER TABLE appdev ADD COLUMN w INTEGER DEFAULT -1").run(); } catch (e) {}      // таблиця з першої версії обліку (без колонки)
   INIT = true;
 }
 // ---------- статистика для адмінів основного бота (лише кількості, без жодних ідентифікаторів) ----------
@@ -69,25 +70,33 @@ async function statAct(env, chat) {
   ]);
 }
 async function statAdd(env, k, n) { if (n > 0) await env.DB.prepare("INSERT INTO daily(day,k,n) VALUES(?,?,?) ON CONFLICT(day,k) DO UPDATE SET n=n+excluded.n").bind(kday(Date.now()), k, n).run().catch(() => {}); }
-// Телефони із застосунком: віджет сам по черзі бере дані з /status.json (User-Agent «SvitloWidget/версія (Android N)»).
-// Нові версії надсилають анонімний номер телефона (X-Svitlo-Device) — тоді рахуємо точно; старі — за версією застосунку й Android
-// (два телефони з однаковими версіями зливаються в один, тому «щонайменше»).
+// Телефони із застосунком: застосунок і віджет самі по черзі беруть дані з /status.json (User-Agent «SvitloWidget/версія (Android N)»).
+// Нові версії надсилають анонімний номер телефона (X-Svitlo-Device) і скільки віджетів на екрані (X-Svitlo-Widgets) — тоді рахуємо точно;
+// старі — за версією застосунку й Android (два телефони з однаковими версіями зливаються в один, тому «щонайменше»).
 const APPSEEN = new Map();
 async function appSeen(env, req) {
   const ua = req.headers.get("user-agent") || "", m = ua.match(/^SvitloWidget\/([\d.]+)/);
   if (!m) return;
-  const id = String(req.headers.get("x-svitlo-device") || "");
-  const k = /^[a-z0-9]{12,32}$/.test(id) ? "id:" + id : "ua:" + ua.slice(0, 80), d = kday(Date.now()), seen = APPSEEN.get(k);
-  if (seen === d) return;                                // цей телефон сьогодні вже записано (у межах цього запуску)
-  if (APPSEEN.size > 5000) APPSEEN.clear();
-  APPSEEN.set(k, d);
   await init(env);
-  await env.DB.prepare("INSERT INTO appdev(day,k,ver) VALUES(?,?,?) ON CONFLICT(day,k) DO UPDATE SET ver=excluded.ver WHERE ver<>excluded.ver").bind(d, k, m[1]).run();
+  await statAdd(env, "wreq", 1);                         // скільки разів застосунки й віджети оновили дані
+  const id = String(req.headers.get("x-svitlo-device") || ""), wh = String(req.headers.get("x-svitlo-widgets") || "");
+  const w = /^\d{1,2}$/.test(wh) ? +wh : -1;
+  const k = /^[a-z0-9]{12,32}$/.test(id) ? "id:" + id : "ua:" + ua.slice(0, 80), d = kday(Date.now()), sig = `${d}|${m[1]}|${w}`;
+  if (APPSEEN.get(k) === sig) return;                    // цей телефон сьогодні вже записано, нічого не змінилось
+  if (APPSEEN.size > 5000) APPSEEN.clear();
+  APPSEEN.set(k, sig);
+  await env.DB.prepare("INSERT INTO appdev(day,k,ver,w) VALUES(?,?,?,?) ON CONFLICT(day,k) DO UPDATE SET ver=excluded.ver, w=excluded.w WHERE ver<>excluded.ver OR w<>excluded.w").bind(d, k, m[1], w).run();
 }
 async function appStats(env, now) {
   const D = 86400000, d0 = kday(now), d1 = kday(now - D);
-  const rows = (await env.DB.prepare("SELECT day, k, ver FROM appdev WHERE day>=?").bind(d1).all()).results || [];
-  const one = d => { const l = rows.filter(r => r.day === d), byVer = {}; for (const r of l) byVer[r.ver] = (byVer[r.ver] || 0) + 1; return { n: l.length, exact: l.every(r => r.k.startsWith("id:")), byVer }; };
+  const [ap, dl] = await env.DB.batch([env.DB.prepare("SELECT day, k, ver, w FROM appdev WHERE day>=?").bind(d1), env.DB.prepare("SELECT day, k, n FROM daily WHERE day>=? AND k IN ('wreq','app')").bind(d1)]);
+  const rows = ap.results || [], dd = dl.results || [], cnt = (d, k) => +((dd.find(r => r.day === d && r.k === k) || {}).n || 0);
+  const one = d => {
+    const l = rows.filter(r => r.day === d), byVer = {};
+    for (const r of l) byVer[r.ver] = (byVer[r.ver] || 0) + 1;
+    const known = l.filter(r => r.w >= 0);
+    return { n: l.length, exact: l.every(r => r.k.startsWith("id:")), byVer, wKnown: known.length, withWidget: known.filter(r => r.w > 0).length, req: cnt(d, "wreq"), push: cnt(d, "app") };
+  };
   return { d0: one(d0), d1: one(d1) };
 }
 async function statsJson(env) {
