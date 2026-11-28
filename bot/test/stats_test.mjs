@@ -64,6 +64,15 @@ chk("дії в боті: сьогодні 5 (3 повідомлення + 2 кн
 chk("надіслано в Telegram сьогодні 2 (заблокований не рахується)", t.tg===2, t.tg);
 chk("обрали черги 3; сповіщення ввімкнули 2; по чергах 3.2 — 2, 4.1 — 1", j.myq===3 && j.subs===2 && j.byQueue["3.2"]===2 && j.byQueue["4.1"]===1, JSON.stringify([j.myq,j.subs,j.byQueue]));
 chk("14 днів у розкладі по днях; «рахую з» — учорашня дата", j.days.length===14 && j.since===y.day, j.since);
+// телефони із застосунком: віджет бере /status.json
+const WG=async(ua,id)=>{ NOW+=60000; await B("/status.json",{headers:{"user-agent":ua,...(id?{"x-svitlo-device":id}:{})}}); };
+await WG("SvitloWidget/1.1.31 (Android 13)"); await WG("SvitloWidget/1.1.31 (Android 13)"); await WG("SvitloWidget/1.1.31 (Android 16)"); await WG("SvitloWidget/1.1.28 (Android 16)"); await WG("Mozilla/5.0 Chrome");
+({j}=await st());
+chk("застосунок: 3 телефони (однакові версії — один), версії 1.1.31 — 2, 1.1.28 — 1; «щонайменше» (без номера)", j.app.d0.n===3 && j.app.d0.exact===false && j.app.d0.byVer["1.1.31"]===2 && j.app.d0.byVer["1.1.28"]===1, JSON.stringify(j.app));
+await WG("SvitloWidget/1.1.32 (Android 17)","abcdefghij12"); await WG("SvitloWidget/1.1.32 (Android 17)","abcdefghij12"); await WG("SvitloWidget/1.1.32 (Android 17)","zyxwvutsrq98");
+({j}=await st());
+chk("…нові версії з анонімним номером: два різні телефони з однаковими версіями рахуються окремо (усього 5)", j.app.d0.n===5 && j.app.d0.byVer["1.1.32"]===2, JSON.stringify(j.app));
+chk("…у статистиці немає самих номерів телефонів", !/abcdefghij12|zyxwvutsrq98/.test(JSON.stringify(j)));
 // старше 60 днів прибирається раз на добу
 sqlite.prepare("INSERT INTO dau(day,chat_id) VALUES('2026-01-01',1)").run(); sqlite.prepare("INSERT INTO daily(day,k,n) VALUES('2026-01-01','act',9)").run();
 sqlite.prepare("DELETE FROM kv WHERE k='pub:clean'").run(); await cron();
