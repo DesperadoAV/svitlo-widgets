@@ -7,7 +7,7 @@ on:
     inputs:
       ver:
         description: 'Яку версію основного воркера чекати'
-        default: '4.1.9'
+        default: '4.2.0'
 
 jobs:
   check:
@@ -39,5 +39,10 @@ jobs:
           [ ${#k} -ge 80 ] && grep -qi 'access-control-allow-origin: \*' hdr.txt && ok "бот: ключ сповіщень є, сайту дозволено (${k:0:12}…)" || bad "бот /wp/key: $k"
           c=$(curl -sS -o /dev/null -w '%{http_code}' -X OPTIONS -H "Origin: $SITE" -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type' "$PUB/wp/sub")
           [ "$c" = "204" ] && ok "бот: браузер може надсилати підписку (OPTIONS 204)" || bad "OPTIONS /wp/sub: $c"
+          # 👥 відвідування: сторінка сама повідомляє про відкриття; неправильний запит нічого не записує (204)
+          echo "$h" | grep -q "/api/hit?v=" && ok "сторінка повідомляє про відкриття (/api/hit)" || bad "на сторінці немає /api/hit"
+          c=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SITE/api/hit?v=check&m=test"); [ "$c" = "204" ] && ok "/api/hit відповідає 204 (перевірка нічого не записала)" || bad "/api/hit: $c"
+          s=$(curl -sS --max-time 20 "$PUB/stats.json"); u=$(echo "$s" | jq -r .users 2>/dev/null)
+          [ -n "$u" ] && [ "$u" != "null" ] && ! echo "$s" | grep -q chat_id && ok "бот для мешканців: статистика /stats.json (користувачів $u, лише кількості)" || bad "бот /stats.json: $(echo "$s" | head -c 200)"
           curl -sS --max-time 20 "$PUB/" | tail -4
           exit $FAIL

@@ -52,9 +52,45 @@ async function init(env) {
     env.DB.prepare("CREATE TABLE IF NOT EXISTS pref (chat_id INTEGER, k TEXT, v TEXT, PRIMARY KEY (chat_id, k))"),          // s — про графік (0 — ні), x — черги для перетинів, ui — версія меню
     env.DB.prepare("CREATE TABLE IF NOT EXISTS outbox (id INTEGER PRIMARY KEY AUTOINCREMENT, chat_id INTEGER, text TEXT, at INTEGER, claim INTEGER DEFAULT 0, tries INTEGER DEFAULT 0)"),   // черга сповіщень
     env.DB.prepare("CREATE TABLE IF NOT EXISTS wpush (id INTEGER PRIMARY KEY AUTOINCREMENT, ep TEXT UNIQUE, p256dh TEXT, auth TEXT, queues TEXT, warn INTEGER DEFAULT 1, sched INTEGER DEFAULT 1, at INTEGER)"),   // браузери: черги «,3.2,6.1,»
-    env.DB.prepare("CREATE TABLE IF NOT EXISTS wpout (id INTEGER PRIMARY KEY AUTOINCREMENT, sid INTEGER, payload TEXT, at INTEGER, claim INTEGER DEFAULT 0, tries INTEGER DEFAULT 0)"),               // черга сповіщень у браузери
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS wpout (id INTEGER PRIMARY KEY AUTOINCREMENT, sid INTEGER, payload TEXT, at INTEGER, claim INTEGER DEFAULT 0, tries INTEGER DEFAULT 0)"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS dau (day TEXT, chat_id INTEGER, PRIMARY KEY (day, chat_id))"),          // хто був активний за день (для статистики адмінів)
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS daily (day TEXT, k TEXT, n INTEGER DEFAULT 0, PRIMARY KEY (day, k))"),  // скільки за день: act — дій у боті, tg/web/app — надісланих сповіщень               // черга сповіщень у браузери
   ]);
   INIT = true;
+}
+// ---------- статистика для адмінів основного бота (лише кількості, без жодних ідентифікаторів) ----------
+const kday = ms => { const p = kp(ms); return `${p.year}-${p.month}-${p.day}`; };
+async function statAct(env, chat) {
+  const d = kday(Date.now());
+  await env.DB.batch([
+    env.DB.prepare("INSERT OR IGNORE INTO dau(day,chat_id) VALUES(?,?)").bind(d, chat),
+    env.DB.prepare("INSERT INTO daily(day,k,n) VALUES(?,'act',1) ON CONFLICT(day,k) DO UPDATE SET n=n+1").bind(d),
+  ]);
+}
+async function statAdd(env, k, n) { if (n > 0) await env.DB.prepare("INSERT INTO daily(day,k,n) VALUES(?,?,?) ON CONFLICT(day,k) DO UPDATE SET n=n+excluded.n").bind(kday(Date.now()), k, n).run().catch(() => {}); }
+async function statsJson(env) {
+  const now = Date.now(), D = 86400000, d0 = kday(now), d1 = kday(now - D), from = kday(now - 13 * D), q = s => env.DB.prepare(s);
+  const [us, fr, da, a7, a30, dl, mq, sb, bq, wp, sn] = await env.DB.batch([
+    q("SELECT COUNT(*) c FROM pub_users"),
+    q("SELECT first_ts t FROM pub_users WHERE first_ts>=?").bind(now - 31 * D),
+    q("SELECT day, COUNT(*) c FROM dau WHERE day>=? GROUP BY day").bind(from),
+    q("SELECT COUNT(DISTINCT chat_id) c FROM dau WHERE day>=?").bind(kday(now - 6 * D)),
+    q("SELECT COUNT(DISTINCT chat_id) c FROM dau WHERE day>=?").bind(kday(now - 29 * D)),
+    q("SELECT day, k, n FROM daily WHERE day>=?").bind(from),
+    q("SELECT COUNT(DISTINCT chat_id) c FROM myq"),
+    q("SELECT COUNT(DISTINCT chat_id) c FROM subs"),
+    q("SELECT queue, COUNT(*) c FROM subs GROUP BY queue"),
+    q("SELECT COUNT(*) c FROM wpush"),
+    q("SELECT MIN(day) d FROM daily"),
+  ]);
+  const one = r => +((r.results || [])[0] || {}).c || 0, act = Object.fromEntries((da.results || []).map(r => [r.day, r.c]));
+  const nd = (fr.results || []).map(r => kday(r.t)), cnt = k => nd.filter(x => x >= k).length, byd = {};
+  for (const r of dl.results || []) (byd[r.day] ||= {})[r.k] = r.n;
+  const days = [];
+  for (let i = 13; i >= 0; i--) { const k = kday(now - i * D), x = byd[k] || {}; days.push({ day: k, active: act[k] || 0, new: nd.filter(y => y === k).length, act: x.act || 0, tg: x.tg || 0, web: x.web || 0, app: x.app || 0 }); }
+  return { v: 1, now, users: one(us), new: { d0: cnt(d0), d7: cnt(kday(now - 6 * D)), d30: cnt(kday(now - 29 * D)) },
+    active: { d0: act[d0] || 0, d1: act[d1] || 0, d7: one(a7), d30: one(a30) }, days, myq: one(mq), subs: one(sb),
+    byQueue: Object.fromEntries((bq.results || []).map(r => [r.queue, r.c])), wpush: one(wp), since: ((sn.results || [])[0] || {}).d || "" };
 }
 async function kvGet(env, k) { const r = await env.DB.prepare("SELECT v FROM kv WHERE k=?").bind(k).first(); return r ? r.v : null; }
 async function kvSet(env, k, v) { await env.DB.prepare("INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").bind(k, String(v)).run(); }
@@ -293,12 +329,17 @@ async function notifyMenu(env, chat, S) {
 
 // ------------------------- повідомлення й кнопки -------------------------
 async function onUpdate(env, u) {
-  if (u.callback_query) return onCallback(env, u.callback_query);
+  if (u.callback_query) {
+    const c = u.callback_query.message && u.callback_query.message.chat;
+    if (c && c.type === "private") await statAct(env, c.id).catch(() => {});
+    return onCallback(env, u.callback_query);
+  }
   const m = u.message;                                  // змінені повідомлення не обробляємо
   if (!m || !m.chat || m.chat.type !== "private") return;
   // ⚠️ відповідаємо лише на текст від людини: службові («прикріплює…»), від ботів, стікери — пропускаємо (інакше можливе зациклення)
   if ((m.from && m.from.is_bot) || m.pinned_message || typeof m.text !== "string") return;
   const chat = m.chat.id, now = Date.now();
+  await statAct(env, chat).catch(() => {});
   const prev = await env.DB.prepare("SELECT last_ts FROM pub_users WHERE chat_id=?").bind(chat).first();
   await env.DB.prepare("INSERT INTO pub_users(chat_id,first_ts,last_ts,n) VALUES(?,?,?,1) ON CONFLICT(chat_id) DO UPDATE SET last_ts=excluded.last_ts, n=n+1").bind(chat, now, now).run();
   if (prev && now - prev.last_ts < 1000) return;        // запобіжник: не частіше ніж раз на секунду
@@ -390,7 +431,12 @@ async function onCallback(env, cq) {
 // Раз на хвилину: свіжі дані → події (світло зникло/з'явилось, скоро відключення, новий графік) → розсилка
 async function tick(env) {
   await init(env);
-  const out = {};
+  const out = {}, cd = kday(Date.now());
+  if (await kvGet(env, "pub:clean") !== cd) {         // раз на добу: статистику старшу за 60 днів прибираємо
+    await kvSet(env, "pub:clean", cd);
+    const old = kday(Date.now() - 60 * 86400000);
+    await env.DB.batch([env.DB.prepare("DELETE FROM dau WHERE day<?").bind(old), env.DB.prepare("DELETE FROM daily WHERE day<?").bind(old)]);
+  }
   const c = await env.DB.prepare("SELECT (SELECT 1 FROM subs LIMIT 1) s, (SELECT 1 FROM wpush LIMIT 1) w, (SELECT 1 FROM outbox LIMIT 1) o, (SELECT 1 FROM wpout LIMIT 1) p, (SELECT 1 FROM pub_users LIMIT 1) u").first();
   const subs = c.s || c.w, pending = c.o || c.p;
   if (subs || c.u || env.FCM_SA) {                       // нікому нічого не потрібно — основний бот не смикаємо
@@ -558,11 +604,11 @@ async function drain(env, max) {
   const now = Date.now();
   const rows = (await env.DB.prepare("UPDATE outbox SET claim=?, tries=tries+1 WHERE id IN (SELECT id FROM outbox WHERE claim < ? ORDER BY id LIMIT ?) RETURNING id, chat_id, text, tries").bind(now, now - 120000, max).all()).results;
   const done = [], gone = [], back = [];
-  let stop = false;
+  let stop = false, okn = 0;
   for (const r of rows) {
     if (stop) { back.push(r.id); continue; }
     const j = await tg(env, "sendMessage", { chat_id: r.chat_id, text: r.text, parse_mode: "HTML", disable_web_page_preview: true });
-    if (j.ok) done.push(r.id);
+    if (j.ok) { done.push(r.id); okn++; }
     else if (j.error_code === 429) { stop = true; back.push(r.id); }                     // Telegram просить пригальмувати — решта наступного разу
     else if (j.error_code === 403 || /chat not found|deactivated|blocked/i.test(String(j.description || ""))) { done.push(r.id); gone.push(r.chat_id); }
     else if (r.tries >= 3) done.push(r.id);
@@ -572,6 +618,7 @@ async function drain(env, max) {
   if (done.length) await env.DB.prepare(`DELETE FROM outbox WHERE id IN (${ids(done)})`).run();
   if (back.length) await env.DB.prepare(`UPDATE outbox SET claim=0 WHERE id IN (${ids(back)})`).run();
   if (gone.length) await env.DB.prepare(`DELETE FROM subs WHERE chat_id IN (${ids([...new Set(gone)])})`).run();   // заблокували бота — більше не пишемо
+  await statAdd(env, "tg", okn);
   return { sent: done.length - gone.length, left: back.length, slow: stop };
 }
 async function drainAll(env) {
@@ -668,6 +715,7 @@ async function drainWeb(env, max) {
   if (done.length) await env.DB.prepare(`DELETE FROM wpout WHERE id IN (${ids(done)})`).run();
   if (back.length) await env.DB.prepare(`UPDATE wpout SET claim=0 WHERE id IN (${ids(back)})`).run();
   if (gone.length) { const g = ids([...new Set(gone)]); await env.DB.batch([env.DB.prepare(`DELETE FROM wpush WHERE id IN (${g})`), env.DB.prepare(`DELETE FROM wpout WHERE sid IN (${g})`)]); }
+  await statAdd(env, "web", sent);
   return { sent, left: back.length, slow: stop };
 }
 async function wpErr(env, d) {
@@ -741,6 +789,7 @@ async function fcmSend(env, tpc, data, ttl, again, device) {   // tpc — тем
     body: JSON.stringify({ message: { ...(device ? { token: device } : { topic: tpc }), data, android: { priority: "HIGH", ttl } } }) });
   if (r.status === 401 && !again) return fcmSend(env, tpc, data, ttl, true, device);
   if (!r.ok) { const t = await r.text().catch(() => ""); if (!device) await fcmErr(env, `${tpc}: ${r.status} ${t.slice(0, 200)}`); return device ? t.slice(0, 200) || String(r.status) : false; }
+  if (!device) await statAdd(env, "app", 1);
   return true;
 }
 // «Пробне» в застосунку: справжнє сповіщення через Firebase саме на цей телефон (за його ідентифікатором) — не частіше разу на хвилину
@@ -801,6 +850,10 @@ export default {
         const H = { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*", "cache-control": "public, max-age=60" };
         try { return new Response(JSON.stringify(statusJson(await snapshot(env))), { headers: H }); }
         catch (e) { return new Response(JSON.stringify({ v: 1, error: String(e && e.message || e) }), { status: 503, headers: { ...H, "cache-control": "no-store" } }); }
+      }
+      if (p === "/stats.json") {                                     // для адмінів основного бота: лише кількості (без ідентифікаторів людей)
+        await init(env);
+        return new Response(JSON.stringify(await statsJson(env)), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
       }
       if (p === "/push-test" && req.method === "POST") {
         await init(env);
