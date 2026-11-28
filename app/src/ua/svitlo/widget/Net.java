@@ -50,6 +50,27 @@ final class Net {
         } catch (Exception e) { return true; }   // не знаємо — спробуємо надіслати
     }
 
+    /** Анонімний номер цього телефона: 16 випадкових символів, створюється один раз і зберігається лише в застосунку. */
+    static String deviceId(Context c) {
+        android.content.SharedPreferences p = Data.prefs(c);
+        String id = p.getString("dev_id", "");
+        if (id.matches("[a-z0-9]{16}")) return id;
+        java.security.SecureRandom r = new java.security.SecureRandom();
+        String abc = "abcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < 16; i++) b.append(abc.charAt(r.nextInt(abc.length())));
+        id = b.toString();
+        p.edit().putString("dev_id", id).apply();
+        return id;
+    }
+
+    /** Скільки віджетів «Світло» стоїть на екрані (0 — лише застосунок). */
+    static int widgets(Context c) {
+        try {
+            return android.appwidget.AppWidgetManager.getInstance(c).getAppWidgetIds(new android.content.ComponentName(c, CardsWidget.class)).length;
+        } catch (Exception e) { return 0; }
+    }
+
     static Res get(Context c, String url) {
         Res r = once(c, url);
         // дуже старий телефон не зміг встановити захищене з'єднання — пробуємо звичайне http
@@ -73,6 +94,9 @@ final class Net {
             con.setUseCaches(false);
             con.setInstanceFollowRedirects(true);
             con.setRequestProperty("User-Agent", "SvitloWidget/" + BuildConfig.VERSION_NAME + " (Android " + Build.VERSION.RELEASE + ")");
+            // 📊 для статистики адмінів: випадковий номер цього телефона (без жодних даних про людину) і скільки віджетів на екрані
+            con.setRequestProperty("X-Svitlo-Device", deviceId(c));
+            con.setRequestProperty("X-Svitlo-Widgets", String.valueOf(widgets(c)));
             con.setRequestProperty("Connection", "close");
             int code = con.getResponseCode();
             String body = null;

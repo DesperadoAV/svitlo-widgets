@@ -167,6 +167,10 @@ A shell input keyevent 4; sleep 1; A shell input keyevent 4; sleep 1
 before=$(hits status.json)
 A shell am broadcast -n $PKG/.CardsWidget -a ua.svitlo.widget.REFRESH >/dev/null 2>&1
 check "кнопка ↻: дані завантажено ще раз" "waitfor '[ \$(hits status.json) -gt $before ]'"
+# 📊 статистика для адмінів: застосунок надсилає анонімний номер телефона (16 символів, щоразу той самий) і кількість віджетів
+DEVS=$(grep ' /status.json' hits.log | grep -o 'dev=[a-z0-9-]*' | sort -u | tr '\n' ' ')
+check "анонімний номер телефона — один і той самий у всіх запитах ($DEVS)" "[ \$(grep ' /status.json' hits.log | grep -o 'dev=[a-z0-9-]*' | sort -u | wc -l) -eq 1 ] && grep ' /status.json' hits.log | grep -q 'dev=[a-z0-9]\{16\} '"
+check "кількість віджетів на екрані передається ($(grep ' /status.json' hits.log | grep -o 'w=[0-9-]*' | sort -u | tr '\n' ' '))" "grep ' /status.json' hits.log | grep -q 'w=[0-9]'"
 A logcat -d > out/logcat-all.txt
 if grep -A3 "FATAL EXCEPTION" out/logcat-all.txt | grep -q "$PKG"; then bad "застосунок падав (див. crash.txt)"; grep -A25 "FATAL EXCEPTION" out/logcat-all.txt > out/crash.txt; else ok "без падінь"; fi
 grep -iE "svitlo|RemoteViews" out/logcat-all.txt | tail -200 > out/logcat-app.txt

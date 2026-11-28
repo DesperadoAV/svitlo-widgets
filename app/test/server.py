@@ -3,7 +3,7 @@ import json, sys, time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 class H(BaseHTTPRequestHandler):
     def do_GET(self):
-        open("hits.log", "a").write(time.strftime("%H:%M:%S") + " " + self.path + "\n")
+        open("hits.log", "a").write(time.strftime("%H:%M:%S") + " " + self.path + " dev=" + (self.headers.get("X-Svitlo-Device") or "-") + " w=" + (self.headers.get("X-Svitlo-Widgets") or "-") + "\n")
         port = self.server.server_address[1]
         if self.path.startswith("/latest.json"):                                  # 📲 опис «нової версії» для перевірки самооновлення
             b = json.dumps({"code": 9999, "name": "1.1.9999", "url": "http://10.0.2.2:%d/app.apk" % port, "notes": "тест"}).encode()
