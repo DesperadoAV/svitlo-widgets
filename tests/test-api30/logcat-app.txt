@@ -1,0 +1,200 @@
+11-28 16:36:25.254  7354  7354 I SvitloNotify: fcm ok
+11-28 16:36:25.263  7354  7354 I SvitloNotify: shown sched 3.2 | Sched 3.2 test
+11-28 16:36:25.464   495   495 D NotificationService: 0|ua.svitlo.widget|-1609994489|null|10167: granting content://settings/system/notification_sound
+11-28 16:36:25.464   495   495 D NotificationService: 0|ua.svitlo.widget|-1609994489|null|10167: granting content://settings/system/notification_sound
+11-28 16:36:25.468   693   693 D InterruptionStateProvider: No bubble up: not allowed to bubble: 0|ua.svitlo.widget|-1609994489|null|10167
+11-28 16:36:25.468   693   693 D InterruptionStateProvider: No heads up: unimportant notification: 0|ua.svitlo.widget|-1609994489|null|10167
+11-28 16:36:25.655   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.NotifyActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:25.655   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.NotifyActivity: +454ms
+11-28 16:36:28.728   495  2002 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7399
+11-28 16:36:28.728   495  2002 I ActivityManager: Killing 7354:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 7399
+11-28 16:36:28.732   495  2002 W ActivityTaskManager: Force removing ActivityRecord{de64c03 u0 ua.svitlo.widget/.NotifyActivity t30 f}}: app died, no saved state
+11-28 16:36:28.733   495   580 W InputDispatcher: channel '5e2d5c5 ua.svitlo.widget/ua.svitlo.widget.NotifyActivity (server)' ~ Consumer closed input channel or an error occurred.  events=0x9
+11-28 16:36:28.733   495   580 E InputDispatcher: channel '5e2d5c5 ua.svitlo.widget/ua.svitlo.widget.NotifyActivity (server)' ~ Channel is unrecoverably broken and will be disposed!
+11-28 16:36:28.737   495  2002 W InputDispatcher: Attempted to unregister already unregistered input channel '5e2d5c5 ua.svitlo.widget/ua.svitlo.widget.NotifyActivity (server)'
+11-28 16:36:28.993   495  2002 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.NotifyActivity (has extras)} from uid 2000
+11-28 16:36:29.026   495   536 I ActivityManager: Start proc 7407:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.NotifyActivity}
+11-28 16:36:29.028  7407  7407 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:29.060  7407  7407 I SvitloNotify: fcm ok
+11-28 16:36:29.065  7407  7407 I SvitloNotify: skip sched 6.1: черга не вибрана
+11-28 16:36:29.409   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.NotifyActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:29.433   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.NotifyActivity: +416ms
+11-28 16:36:31.444   495  2002 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7447
+11-28 16:36:31.444   495  2002 I ActivityManager: Killing 7407:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 7447
+11-28 16:36:31.445   495  2002 W ActivityTaskManager: Force removing ActivityRecord{409ed39 u0 ua.svitlo.widget/.NotifyActivity t31 f}}: app died, no saved state
+11-28 16:36:31.703   495  2002 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.NotifyActivity (has extras)} from uid 2000
+11-28 16:36:31.724  7455  7455 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:31.725   495   536 I ActivityManager: Start proc 7455:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.NotifyActivity}
+11-28 16:36:31.746  7455  7455 I SvitloNotify: fcm ok
+11-28 16:36:31.758  7455  7455 I SvitloNotify: skip sched 3.2: графік вимкнено
+11-28 16:36:32.062   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.NotifyActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:32.079   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.NotifyActivity: +358ms
+11-28 16:36:35.658   495  2002 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7512
+11-28 16:36:35.658   495  2002 I ActivityManager: Killing 7455:ua.svitlo.widget/u0a167 (adj 900): stop ua.svitlo.widget due to from pid 7512
+11-28 16:36:35.910   495  2002 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:36:35.932   495   536 I ActivityManager: Start proc 7520:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:36:35.935  7520  7520 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:35.965  7520  7520 I SvitloCompare: compare d0 [3.2, 6.1] segs 6 alloff 0 known 2 bars new
+11-28 16:36:36.284   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:36.285   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +373ms
+11-28 16:36:36.707   425  7451 I iorapd  : Perfetto TraceBuffer saved to file: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.NotifyActivity/raw_traces/1795883796706903990.perfetto_trace.pb
+11-28 16:36:39.386   495  1527 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7565
+11-28 16:36:39.386   495  1527 I ActivityManager: Killing 7520:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 7565
+11-28 16:36:39.388   495  1527 W ActivityTaskManager: Force removing ActivityRecord{8b4b46e u0 ua.svitlo.widget/.CompareActivity t33 f}}: app died, no saved state
+11-28 16:36:39.643   495  1527 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:36:39.665   495   536 I ActivityManager: Start proc 7573:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:36:39.666  7573  7573 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:39.701  7573  7573 I SvitloCompare: compare d1 [3.2, 6.1] segs 4 alloff 0 known 2 bars new
+11-28 16:36:40.030   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:40.034   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +384ms
+11-28 16:36:43.128   495  2410 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7617
+11-28 16:36:43.128   495  2410 I ActivityManager: Killing 7573:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 7617
+11-28 16:36:43.132   495  2410 W ActivityTaskManager: Force removing ActivityRecord{6b84bc1 u0 ua.svitlo.widget/.CompareActivity t34 f}}: app died, no saved state
+11-28 16:36:43.132   495   580 W InputDispatcher: channel '88f3e23 ua.svitlo.widget/ua.svitlo.widget.CompareActivity (server)' ~ Consumer closed input channel or an error occurred.  events=0x9
+11-28 16:36:43.132   495   580 E InputDispatcher: channel '88f3e23 ua.svitlo.widget/ua.svitlo.widget.CompareActivity (server)' ~ Channel is unrecoverably broken and will be disposed!
+11-28 16:36:43.133   495  2410 W InputDispatcher: Attempted to unregister already unregistered input channel '88f3e23 ua.svitlo.widget/ua.svitlo.widget.CompareActivity (server)'
+11-28 16:36:43.389   495  2410 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:36:43.406   495   536 I ActivityManager: Start proc 7625:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:36:43.410  7625  7625 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:43.441  7625  7625 I SvitloCompare: compare d0 [2.1, 6.1] segs 3 alloff 1 known 2 bars new
+11-28 16:36:43.789   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:43.792   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +394ms
+11-28 16:36:44.645   425  7569 I iorapd  : Perfetto TraceBuffer saved to file: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/raw_traces/1795883804645254682.perfetto_trace.pb
+11-28 16:36:46.890   495  1958 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7669
+11-28 16:36:46.891   495  1958 I ActivityManager: Killing 7625:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 7669
+11-28 16:36:46.892   495  1958 W ActivityTaskManager: Force removing ActivityRecord{4f6f59d u0 ua.svitlo.widget/.CompareActivity t35 f}}: app died, no saved state
+11-28 16:36:47.149   495  1958 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:36:47.177   495   536 I ActivityManager: Start proc 7677:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:36:47.179  7677  7677 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:47.209  7677  7677 I SvitloCompare: compare d1 [2.1, 6.1] segs 1 alloff 0 known 1 bars new
+11-28 16:36:47.563   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:47.563   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +403ms
+11-28 16:36:52.150   495  1996 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7742
+11-28 16:36:52.150   495  1996 I ActivityManager: Killing 7677:ua.svitlo.widget/u0a167 (adj 900): stop ua.svitlo.widget due to from pid 7742
+11-28 16:36:52.402   495  1996 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:36:52.423   495   536 I ActivityManager: Start proc 7750:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:36:52.425  7750  7750 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:52.456  7750  7750 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:36:52.456  7750  7750 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:36:52.474  7750  7750 I TetheringManager: registerTetheringEventCallback:ua.svitlo.widget
+11-28 16:36:52.505   495   536 I ActivityManager: Start proc 7795:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i4 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:36:52.520   495  1049 D ConnectivityService: requestNetwork for uid/pid:10167/7750 NetworkRequest [ TRACK_DEFAULT id=49, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ]
+11-28 16:36:52.520   495   633 D UntrustedWifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=49, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:36:52.520   495   633 D WifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=49, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:36:52.520  1006  1006 D PhoneSwitcherNetworkRequstListener: got request NetworkRequest [ TRACK_DEFAULT id=49, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:36:52.548  7750  7750 I SvitloNotify: topics [news, w_3.2, q_3.2]
+11-28 16:36:52.689   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:52.690   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +282ms
+11-28 16:36:53.066  7750  7848 I SvitloMain: bars old
+11-28 16:36:54.559  7750  7750 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:36:58.749   495  2002 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7860
+11-28 16:36:58.749   495  2002 I ActivityManager: Killing 7750:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 7860
+11-28 16:36:58.750   495  2002 W ActivityTaskManager: Force removing ActivityRecord{272a0dc u0 ua.svitlo.widget/.MainActivity t37 f}}: app died, no saved state
+11-28 16:36:58.781   495  1994 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ LISTEN id=50, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&FOREGROUND Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@9207c23)
+11-28 16:36:58.781   495  1994 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ TRACK_DEFAULT id=49, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@eb9b520)
+11-28 16:36:58.783   495   639 D ConnectivityService: releasing NetworkRequest [ TRACK_DEFAULT id=49, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] (release request)
+11-28 16:36:59.006   495  2002 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:36:59.028   495   536 I ActivityManager: Start proc 7869:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:36:59.030  7869  7869 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:36:59.059  7869  7869 I SvitloCompare: compare d0 [3.2, 6.1] segs 6 alloff 0 known 2 bars old
+11-28 16:36:59.373   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:36:59.374   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +364ms
+11-28 16:37:04.010   425  7865 I iorapd  : Perfetto TraceBuffer saved to file: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/raw_traces/1795883824010057881.perfetto_trace.pb
+11-28 16:37:06.065   495  1996 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 7936
+11-28 16:37:06.066   495  1996 I ActivityManager: Killing 7869:ua.svitlo.widget/u0a167 (adj 700): stop ua.svitlo.widget due to from pid 7936
+11-28 16:37:06.068   495  1996 W ActivityTaskManager: Force removing ActivityRecord{32de04f u0 ua.svitlo.widget/.CompareActivity t38 f}}: app died, no saved state
+11-28 16:37:06.324   495  1996 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:37:06.358   495   536 I ActivityManager: Start proc 7944:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:37:06.359  7944  7944 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:37:06.391  7944  7944 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:06.393  7944  7944 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:06.405  7944  7944 I TetheringManager: registerTetheringEventCallback:ua.svitlo.widget
+11-28 16:37:06.424   495   536 I ActivityManager: Start proc 7986:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i5 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:37:06.437   495  2002 D ConnectivityService: requestNetwork for uid/pid:10167/7944 NetworkRequest [ TRACK_DEFAULT id=51, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ]
+11-28 16:37:06.438   495   633 D UntrustedWifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=51, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:06.438   495   633 D WifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=51, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:06.438  1006  1006 D PhoneSwitcherNetworkRequstListener: got request NetworkRequest [ TRACK_DEFAULT id=51, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:06.448  7944  7944 I SvitloNotify: topics [news, w_3.2, q_3.2]
+11-28 16:37:06.827   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:37:06.840   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +475ms
+11-28 16:37:06.975  7944  8042 I SvitloMain: bars new
+11-28 16:37:08.475  7944  7944 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:37:11.329   425  7940 I iorapd  : Perfetto TraceBuffer saved to file: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.MainActivity/raw_traces/1795883831329366183.perfetto_trace.pb
+11-28 16:37:12.840   495  1996 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 8052
+11-28 16:37:12.841   495  1996 I ActivityManager: Killing 7944:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 8052
+11-28 16:37:12.841   495  1996 W ActivityTaskManager: Force removing ActivityRecord{747bff5 u0 ua.svitlo.widget/.MainActivity t39 f}}: app died, no saved state
+11-28 16:37:12.863   495   626 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ TRACK_DEFAULT id=51, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@7c7b36c)
+11-28 16:37:12.863   495   626 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ LISTEN id=52, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&FOREGROUND Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@a3a7d35)
+11-28 16:37:12.863   495   639 D ConnectivityService: releasing NetworkRequest [ TRACK_DEFAULT id=51, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] (release request)
+11-28 16:37:13.096   495  1996 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:37:13.122   495   536 I ActivityManager: Start proc 8061:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:37:13.124  8061  8061 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:37:13.153  8061  8061 I SvitloCompare: compare d0 [3.2, 6.1] segs 6 alloff 0 known 2 bars new
+11-28 16:37:13.484   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:37:13.491   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +387ms
+11-28 16:37:18.075   495  1049 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 8119
+11-28 16:37:18.075   495  1049 I ActivityManager: Killing 8061:ua.svitlo.widget/u0a167 (adj 900): stop ua.svitlo.widget due to from pid 8119
+11-28 16:37:18.100   425  8057 I iorapd  : Perfetto TraceBuffer saved to file: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.CompareActivity/raw_traces/1795883838100302654.perfetto_trace.pb
+11-28 16:37:18.328   495  1049 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:37:18.349   495   536 I ActivityManager: Start proc 8127:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:37:18.350  8127  8127 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:37:18.378  8127  8127 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:18.380  8127  8127 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:18.398  8127  8127 I TetheringManager: registerTetheringEventCallback:ua.svitlo.widget
+11-28 16:37:18.421   495   536 I ActivityManager: Start proc 8168:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i6 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:37:18.437   495  1117 D ConnectivityService: requestNetwork for uid/pid:10167/8127 NetworkRequest [ TRACK_DEFAULT id=53, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ]
+11-28 16:37:18.437   495   633 D UntrustedWifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=53, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:18.437   495   633 D WifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=53, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:18.437  1006  1006 D PhoneSwitcherNetworkRequstListener: got request NetworkRequest [ TRACK_DEFAULT id=53, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:18.451  8127  8127 I SvitloNotify: topics [news, w_3.2, q_3.2]
+11-28 16:37:18.642   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:37:18.643   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +313ms
+11-28 16:37:18.847  8127  8224 I SvitloNotify: topics [news, w_3.2, w_6.1, q_3.2, q_6.1]
+11-28 16:37:18.847  8127  8224 I SvitloMain: notify save [3.2, 6.1] warn true sched false
+11-28 16:37:20.461  8127  8127 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:37:24.747   495   617 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 8245
+11-28 16:37:24.747   495   617 I ActivityManager: Killing 8127:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 8245
+11-28 16:37:24.748   495   617 W ActivityTaskManager: Force removing ActivityRecord{fcbd57f u0 ua.svitlo.widget/.MainActivity t41 f}}: app died, no saved state
+11-28 16:37:24.759   495  1049 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ LISTEN id=54, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&FOREGROUND Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@4b7038e)
+11-28 16:37:24.759   495  1049 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ TRACK_DEFAULT id=53, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@2d5f7af)
+11-28 16:37:24.761   495   639 D ConnectivityService: releasing NetworkRequest [ TRACK_DEFAULT id=53, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] (release request)
+11-28 16:37:25.006   495   617 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:37:25.041   495   536 I ActivityManager: Start proc 8254:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:37:25.041  8254  8254 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:37:25.077  8254  8254 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:25.077  8254  8254 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:25.090  8254  8254 I TetheringManager: registerTetheringEventCallback:ua.svitlo.widget
+11-28 16:37:25.107   495   536 I ActivityManager: Start proc 8299:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i7 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:37:25.117   495  1526 D ConnectivityService: requestNetwork for uid/pid:10167/8254 NetworkRequest [ TRACK_DEFAULT id=55, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ]
+11-28 16:37:25.117   495   633 D UntrustedWifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=55, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:25.117   495   633 D WifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=55, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:25.117  1006  1006 D PhoneSwitcherNetworkRequstListener: got request NetworkRequest [ TRACK_DEFAULT id=55, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:25.133  8254  8254 I SvitloNotify: topics [news, w_3.2, w_6.1, q_3.2, q_6.1]
+11-28 16:37:25.347   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:37:25.474   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +337ms
+11-28 16:37:27.173  8254  8254 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:37:30.013   425  8250 I iorapd  : Perfetto TraceBuffer saved to file: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.MainActivity/raw_traces/1795883850013540997.perfetto_trace.pb
+11-28 16:37:30.448   495  1527 I ActivityManager: Force stopping ua.svitlo.widget appid=10167 user=0: from pid 8366
+11-28 16:37:30.449   495  1527 I ActivityManager: Killing 8254:ua.svitlo.widget/u0a167 (adj 0): stop ua.svitlo.widget due to from pid 8366
+11-28 16:37:30.451   495  1527 W ActivityTaskManager: Force removing ActivityRecord{3b5d113 u0 ua.svitlo.widget/.MainActivity t42 f}}: app died, no saved state
+11-28 16:37:30.475   495  3098 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ TRACK_DEFAULT id=55, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@113271c)
+11-28 16:37:30.475   495  3098 D ConnectivityService: ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ LISTEN id=56, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&FOREGROUND Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ], android.os.BinderProxy@6ba5f25)
+11-28 16:37:30.477   495   639 D ConnectivityService: releasing NetworkRequest [ TRACK_DEFAULT id=55, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] (release request)
+11-28 16:37:30.714   495  1527 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:37:30.742   495   536 I ActivityManager: Start proc 8378:ua.svitlo.widget/u0a167 for pre-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:37:30.744  8378  8378 W a.svitlo.widge: Unexpected CPU variant for X86 using defaults: x86_64
+11-28 16:37:30.767  8378  8399 I TetheringManager: registerTetheringEventCallback:ua.svitlo.widget
+11-28 16:37:30.777  8378  8378 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:30.778  8378  8378 I a.svitlo.widge: The ClassLoaderContext is a special shared library.
+11-28 16:37:30.821   495   536 I ActivityManager: Start proc 8422:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i8 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:37:30.830   495  3101 D ConnectivityService: requestNetwork for uid/pid:10167/8378 NetworkRequest [ TRACK_DEFAULT id=57, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ]
+11-28 16:37:30.830   495   633 D UntrustedWifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=57, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:30.830   495   633 D WifiNetworkFactory: got request NetworkRequest [ TRACK_DEFAULT id=57, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:30.830  1006  1006 D PhoneSwitcherNetworkRequstListener: got request NetworkRequest [ TRACK_DEFAULT id=57, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10167 AdministratorUids: [] RequestorUid: 10167 RequestorPackageName: ua.svitlo.widget] ] with score 60 and providerId 3
+11-28 16:37:30.837  8378  8378 I SvitloNotify: topics [news, w_3.2, w_6.1, q_3.2, q_6.1]
+11-28 16:37:31.023   495   534 D ArtManagerInternalImpl: /data/misc/iorapd/ua.svitlo.widget/132/ua.svitlo.widget.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-28 16:37:31.095   495   534 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +309ms
+11-28 16:37:31.213  8378  8378 I SvitloMain: addWidget pin
+11-28 16:37:31.223  8378  8477 I SvitloMain: refresh widget
+11-28 16:37:31.265  8378  8480 I SvitloMain: refresh widget ok
+11-28 16:37:32.864  8378  8378 I SvitloMain: web_y 95 statusbar 24 OK

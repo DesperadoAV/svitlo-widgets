@@ -1,0 +1,200 @@
+11-28 16:38:25.765  8862  8862 W a.svitlo.widget: Unexpected CPU variant for x86: x86_64.
+11-28 16:38:25.765  8862  8862 W a.svitlo.widget: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 16:38:25.765   485  1882 D CoreBackPreview: Window{8682846 u0 Splash Screen ua.svitlo.widget}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6a095d, mPriority=0}
+11-28 16:38:25.801  8862  8862 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/ua.svitlo.widget
+11-28 16:38:25.810  8862  8862 V GraphicsEnvironment: ANGLE Developer option for 'ua.svitlo.widget' set to: 'default'
+11-28 16:38:25.810  8862  8862 V GraphicsEnvironment: ANGLE GameManagerService for ua.svitlo.widget: false
+11-28 16:38:25.846  8862  8862 W a.svitlo.widget: Entry not found
+11-28 16:38:25.897  8862  8898 I cr_VariationsUtils: Failed reading seed file "/data/user/0/ua.svitlo.widget/app_webview/variations_seed_new"
+11-28 16:38:25.938   485   517 I ActivityManager: Start proc 8902:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i3 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:38:26.073   485  1702 D ConnectivityService: requestNetwork for uid/pid:10174/8862 activeRequest: null callbackRequest: 164 [NetworkRequest [ REQUEST id=165, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-28 16:38:26.076   485   697 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=165, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:26.077   485   697 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=165, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:26.077   485   697 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=165, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:26.077   485   697 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=165, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:26.110  8862  8862 I SvitloNotify: topics [news, w_3.2, q_3.2]
+11-28 16:38:26.139   485  1882 D CoreBackPreview: Window{cf96090 u0 ua.svitlo.widget/ua.svitlo.widget.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@55b518e, mPriority=0}
+11-28 16:38:26.460   485   505 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +717ms
+11-28 16:38:26.476   485  2311 D CoreBackPreview: Window{8682846 u0 Splash Screen ua.svitlo.widget EXITING}: Setting back callback null
+11-28 16:38:26.477   485  1882 W InputManager-JNI: Input channel object '8682846 Splash Screen ua.svitlo.widget (client)' was disposed without first being removed with the input manager!
+11-28 16:38:26.510  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:38:26.595  8862  8971 I SvitloMain: bars old
+11-28 16:38:28.155  8862  8862 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:38:32.540   485  2354 I ActivityManager: Force stopping ua.svitlo.widget appid=10174 user=0: from pid 8988
+11-28 16:38:32.543   485  2354 I ActivityManager: Killing 8862:ua.svitlo.widget/u0a174 (adj 0): stop ua.svitlo.widget due to from pid 8988
+11-28 16:38:32.547   485  2354 W ActivityTaskManager: Force removing ActivityRecord{49e9e7a u0 ua.svitlo.widget/.MainActivity} t37 f}}: app died, no saved state
+11-28 16:38:32.554   485  2354 W InputManager-JNI: Input channel object 'cf96090 ua.svitlo.widget/ua.svitlo.widget.MainActivity (client)' was disposed without first being removed with the input manager!
+11-28 16:38:32.567   485   704 D ConnectivityService: releasing NetworkRequest [ REQUEST id=165, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ] (release request)
+11-28 16:38:32.577   485   884 V ActivityManager: Got obituary of 8862:ua.svitlo.widget
+11-28 16:38:32.586   986   986 D CarrierSvcBindHelper: onHandleForceStop: [ua.svitlo.widget]
+11-28 16:38:32.811   485  2354 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:38:32.828   485   502 D CoreBackPreview: Window{2ad661a u0 Splash Screen ua.svitlo.widget}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d4a7041, mPriority=0}
+11-28 16:38:32.830   485   517 I ActivityManager: Start proc 8998:ua.svitlo.widget/u0a174 for next-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:38:32.835  8998  8998 I a.svitlo.widget: Using CollectorTypeCC GC.
+11-28 16:38:32.836  8998  8998 W a.svitlo.widget: Unexpected CPU variant for x86: x86_64.
+11-28 16:38:32.836  8998  8998 W a.svitlo.widget: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 16:38:32.876  8998  8998 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/ua.svitlo.widget
+11-28 16:38:32.881  8998  8998 V GraphicsEnvironment: ANGLE Developer option for 'ua.svitlo.widget' set to: 'default'
+11-28 16:38:32.881  8998  8998 V GraphicsEnvironment: ANGLE GameManagerService for ua.svitlo.widget: false
+11-28 16:38:32.908  8998  8998 I SvitloCompare: compare d0 [3.2, 6.1] segs 6 alloff 0 known 2 bars old
+11-28 16:38:32.913   485   884 D CoreBackPreview: Window{3e76070 u0 ua.svitlo.widget/ua.svitlo.widget.CompareActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4a6046e, mPriority=0}
+11-28 16:38:33.391   485   505 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +578ms
+11-28 16:38:33.422   485  1881 D CoreBackPreview: Window{2ad661a u0 Splash Screen ua.svitlo.widget}: Setting back callback null
+11-28 16:38:33.425   485  1702 W InputManager-JNI: Input channel object '2ad661a Splash Screen ua.svitlo.widget (client)' was disposed without first being removed with the input manager!
+11-28 16:38:33.427  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:38:39.831   485  1702 I ActivityManager: Force stopping ua.svitlo.widget appid=10174 user=0: from pid 9061
+11-28 16:38:39.832   485  1702 I ActivityManager: Killing 8998:ua.svitlo.widget/u0a174 (adj 700): stop ua.svitlo.widget due to from pid 9061
+11-28 16:38:39.833   485  1702 W ActivityTaskManager: Force removing ActivityRecord{7edd52f u0 ua.svitlo.widget/.CompareActivity} t38 f}}: app died, no saved state
+11-28 16:38:39.833   485   515 W UsageStatsService: Unexpected activity event reported! (ua.svitlo.widget/ua.svitlo.widget.CompareActivity event : 23 instanceId : 16115470)
+11-28 16:38:39.834   485  1702 W InputManager-JNI: Input channel object '3e76070 ua.svitlo.widget/ua.svitlo.widget.CompareActivity (client)' was disposed without first being removed with the input manager!
+11-28 16:38:39.840   986   986 D CarrierSvcBindHelper: onHandleForceStop: [ua.svitlo.widget]
+11-28 16:38:39.844   485  2325 V ActivityManager: Got obituary of 8998:ua.svitlo.widget
+11-28 16:38:40.089   485  1702 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:38:40.107   485  2480 D CoreBackPreview: Window{b254248 u0 Splash Screen ua.svitlo.widget}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1939606, mPriority=0}
+11-28 16:38:40.111   485   517 I ActivityManager: Start proc 9064:ua.svitlo.widget/u0a174 for next-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:38:40.115  9064  9064 I a.svitlo.widget: Using CollectorTypeCC GC.
+11-28 16:38:40.115  9064  9064 W a.svitlo.widget: Unexpected CPU variant for x86: x86_64.
+11-28 16:38:40.115  9064  9064 W a.svitlo.widget: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 16:38:40.161  9064  9064 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/ua.svitlo.widget
+11-28 16:38:40.165  9064  9064 V GraphicsEnvironment: ANGLE Developer option for 'ua.svitlo.widget' set to: 'default'
+11-28 16:38:40.165  9064  9064 V GraphicsEnvironment: ANGLE GameManagerService for ua.svitlo.widget: false
+11-28 16:38:40.197  9064  9064 W a.svitlo.widget: Entry not found
+11-28 16:38:40.226  9064  9100 I cr_VariationsUtils: Failed reading seed file "/data/user/0/ua.svitlo.widget/app_webview/variations_seed_new"
+11-28 16:38:40.243   485   517 I ActivityManager: Start proc 9104:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i4 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:38:40.274  9064  9122 E chromium: [ERROR:simple_file_enumerator.cc(43)] readdir /data/user/0/ua.svitlo.widget/cache/WebView/Default/HTTP Cache/Code Cache/wasm: No such file or directory (2)
+11-28 16:38:40.282   485  2480 D ConnectivityService: requestNetwork for uid/pid:10174/9064 activeRequest: null callbackRequest: 167 [NetworkRequest [ REQUEST id=168, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-28 16:38:40.291   485   697 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=168, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:40.291   485   697 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=168, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:40.293   485   697 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=168, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:40.296   485   697 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=168, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:40.314  9064  9064 I SvitloNotify: topics [news, w_3.2, q_3.2]
+11-28 16:38:40.343   485  1703 D CoreBackPreview: Window{47b9e4 u0 ua.svitlo.widget/ua.svitlo.widget.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1627d02, mPriority=0}
+11-28 16:38:40.413  9064  9164 I SvitloMain: bars new
+11-28 16:38:40.742   485   505 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +652ms
+11-28 16:38:40.757  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:38:40.760   485  2229 W InputManager-JNI: Input channel object 'b254248 Splash Screen ua.svitlo.widget (client)' was disposed without first being removed with the input manager!
+11-28 16:38:40.761   485  1702 D CoreBackPreview: Window{b254248 u0 Splash Screen ua.svitlo.widget EXITING}: Setting back callback null
+11-28 16:38:42.368  9064  9064 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:38:46.795   485  2016 I ActivityManager: Force stopping ua.svitlo.widget appid=10174 user=0: from pid 9178
+11-28 16:38:46.796   485  2016 I ActivityManager: Killing 9064:ua.svitlo.widget/u0a174 (adj 0): stop ua.svitlo.widget due to from pid 9178
+11-28 16:38:46.801   485  2016 W ActivityTaskManager: Force removing ActivityRecord{77abc5c u0 ua.svitlo.widget/.MainActivity} t39 f}}: app died, no saved state
+11-28 16:38:46.807   485  2016 W InputManager-JNI: Input channel object '47b9e4 ua.svitlo.widget/ua.svitlo.widget.MainActivity (client)' was disposed without first being removed with the input manager!
+11-28 16:38:46.824   485   704 D ConnectivityService: releasing NetworkRequest [ REQUEST id=168, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ] (release request)
+11-28 16:38:46.832   485  2480 V ActivityManager: Got obituary of 9064:ua.svitlo.widget
+11-28 16:38:46.861   986   986 D CarrierSvcBindHelper: onHandleForceStop: [ua.svitlo.widget]
+11-28 16:38:47.081   485  2016 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.CompareActivity (has extras)} from uid 2000
+11-28 16:38:47.096   485   851 D CoreBackPreview: Window{ab5af6e u0 Splash Screen ua.svitlo.widget}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@385369c, mPriority=0}
+11-28 16:38:47.116   485   517 I ActivityManager: Start proc 9187:ua.svitlo.widget/u0a174 for next-top-activity {ua.svitlo.widget/ua.svitlo.widget.CompareActivity}
+11-28 16:38:47.126  9187  9187 I a.svitlo.widget: Using CollectorTypeCC GC.
+11-28 16:38:47.127  9187  9187 W a.svitlo.widget: Unexpected CPU variant for x86: x86_64.
+11-28 16:38:47.127  9187  9187 W a.svitlo.widget: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 16:38:47.163  9187  9187 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/ua.svitlo.widget
+11-28 16:38:47.167  9187  9187 V GraphicsEnvironment: ANGLE Developer option for 'ua.svitlo.widget' set to: 'default'
+11-28 16:38:47.167  9187  9187 V GraphicsEnvironment: ANGLE GameManagerService for ua.svitlo.widget: false
+11-28 16:38:47.196  9187  9187 I SvitloCompare: compare d0 [3.2, 6.1] segs 6 alloff 0 known 2 bars new
+11-28 16:38:47.210   485  2311 D CoreBackPreview: Window{b2411cd u0 ua.svitlo.widget/ua.svitlo.widget.CompareActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@616b593, mPriority=0}
+11-28 16:38:47.655   485   505 I ActivityTaskManager: Displayed ua.svitlo.widget/.CompareActivity: +573ms
+11-28 16:38:47.676   485  2480 D CoreBackPreview: Window{ab5af6e u0 Splash Screen ua.svitlo.widget EXITING}: Setting back callback null
+11-28 16:38:47.676   485  2480 W InputManager-JNI: Input channel object 'ab5af6e Splash Screen ua.svitlo.widget (client)' was disposed without first being removed with the input manager!
+11-28 16:38:47.682  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:38:50.912   485  2311 W InputManager-JNI: Input channel object 'b2411cd ua.svitlo.widget/ua.svitlo.widget.CompareActivity (client)' was disposed without first being removed with the input manager!
+11-28 16:38:50.917   485  2016 E WindowManager: setOnBackInvokedCallback(): No window state for package:ua.svitlo.widget
+11-28 16:38:51.884   485  2353 I ActivityManager: Force stopping ua.svitlo.widget appid=10174 user=0: from pid 9249
+11-28 16:38:51.885   485  2353 I ActivityManager: Killing 9187:ua.svitlo.widget/u0a174 (adj 900): stop ua.svitlo.widget due to from pid 9249
+11-28 16:38:51.889   986   986 D CarrierSvcBindHelper: onHandleForceStop: [ua.svitlo.widget]
+11-28 16:38:51.893   485  2197 V ActivityManager: Got obituary of 9187:ua.svitlo.widget
+11-28 16:38:52.141   485  2353 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:38:52.160   485  2327 D CoreBackPreview: Window{b9a57a8 u0 Splash Screen ua.svitlo.widget}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@7351a66, mPriority=0}
+11-28 16:38:52.162   485   517 I ActivityManager: Start proc 9252:ua.svitlo.widget/u0a174 for next-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:38:52.166  9252  9252 I a.svitlo.widget: Using CollectorTypeCC GC.
+11-28 16:38:52.167  9252  9252 W a.svitlo.widget: Unexpected CPU variant for x86: x86_64.
+11-28 16:38:52.167  9252  9252 W a.svitlo.widget: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 16:38:52.194  9252  9252 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/ua.svitlo.widget
+11-28 16:38:52.197  9252  9252 V GraphicsEnvironment: ANGLE Developer option for 'ua.svitlo.widget' set to: 'default'
+11-28 16:38:52.197  9252  9252 V GraphicsEnvironment: ANGLE GameManagerService for ua.svitlo.widget: false
+11-28 16:38:52.248  9252  9252 W a.svitlo.widget: Entry not found
+11-28 16:38:52.281  9252  9287 I cr_VariationsUtils: Failed reading seed file "/data/user/0/ua.svitlo.widget/app_webview/variations_seed_new"
+11-28 16:38:52.294   485   517 I ActivityManager: Start proc 9290:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i5 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:38:52.343   485  1951 D ConnectivityService: requestNetwork for uid/pid:10174/9252 activeRequest: null callbackRequest: 170 [NetworkRequest [ REQUEST id=171, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-28 16:38:52.344   485   697 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=171, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:52.344   485   697 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=171, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:52.344   485   697 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=171, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:52.344   485   697 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=171, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:52.366  9252  9252 I SvitloNotify: topics [news, w_3.2, q_3.2]
+11-28 16:38:52.401   485   689 D CoreBackPreview: Window{c67be57 u0 ua.svitlo.widget/ua.svitlo.widget.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ca09f62, mPriority=0}
+11-28 16:38:52.459  9252  9347 I SvitloNotify: topics [news, w_3.2, w_6.1, q_3.2, q_6.1]
+11-28 16:38:52.459  9252  9347 I SvitloMain: notify save [3.2, 6.1] warn true sched false
+11-28 16:38:52.642   485   505 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +500ms
+11-28 16:38:52.660   485  1951 D CoreBackPreview: Window{b9a57a8 u0 Splash Screen ua.svitlo.widget EXITING}: Setting back callback null
+11-28 16:38:52.660   485   689 W InputManager-JNI: Input channel object 'b9a57a8 Splash Screen ua.svitlo.widget (client)' was disposed without first being removed with the input manager!
+11-28 16:38:52.759  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:38:54.445  9252  9252 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:38:58.758   485   689 I ActivityManager: Force stopping ua.svitlo.widget appid=10174 user=0: from pid 9373
+11-28 16:38:58.759   485   689 I ActivityManager: Killing 9252:ua.svitlo.widget/u0a174 (adj 0): stop ua.svitlo.widget due to from pid 9373
+11-28 16:38:58.759   485   689 W ActivityTaskManager: Force removing ActivityRecord{4b73bbc u0 ua.svitlo.widget/.MainActivity} t41 f}}: app died, no saved state
+11-28 16:38:58.762   485   689 W InputManager-JNI: Input channel object 'c67be57 ua.svitlo.widget/ua.svitlo.widget.MainActivity (client)' was disposed without first being removed with the input manager!
+11-28 16:38:58.788   485   704 D ConnectivityService: releasing NetworkRequest [ REQUEST id=171, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ] (release request)
+11-28 16:38:58.802   986   986 D CarrierSvcBindHelper: onHandleForceStop: [ua.svitlo.widget]
+11-28 16:38:58.804   485  1618 V ActivityManager: Got obituary of 9252:ua.svitlo.widget
+11-28 16:38:59.022   485   689 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:38:59.033   485  2327 D CoreBackPreview: Window{8415f71 u0 Splash Screen ua.svitlo.widget}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@19835d7, mPriority=0}
+11-28 16:38:59.041   485   517 I ActivityManager: Start proc 9381:ua.svitlo.widget/u0a174 for next-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:38:59.047  9381  9381 I a.svitlo.widget: Using CollectorTypeCC GC.
+11-28 16:38:59.049  9381  9381 W a.svitlo.widget: Unexpected CPU variant for x86: x86_64.
+11-28 16:38:59.049  9381  9381 W a.svitlo.widget: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 16:38:59.093  9381  9381 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/ua.svitlo.widget
+11-28 16:38:59.097  9381  9381 V GraphicsEnvironment: ANGLE Developer option for 'ua.svitlo.widget' set to: 'default'
+11-28 16:38:59.098  9381  9381 V GraphicsEnvironment: ANGLE GameManagerService for ua.svitlo.widget: false
+11-28 16:38:59.125  9381  9381 W a.svitlo.widget: Entry not found
+11-28 16:38:59.161  9381  9415 I cr_VariationsUtils: Failed reading seed file "/data/user/0/ua.svitlo.widget/app_webview/variations_seed_new"
+11-28 16:38:59.172   485   517 I ActivityManager: Start proc 9419:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i6 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:38:59.231   485  1951 D ConnectivityService: requestNetwork for uid/pid:10174/9381 activeRequest: null callbackRequest: 173 [NetworkRequest [ REQUEST id=174, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-28 16:38:59.232   485   697 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=174, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:59.232   485   697 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=174, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:59.232   485   697 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=174, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:59.232   485   697 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=174, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:38:59.251  9381  9381 I SvitloNotify: topics [news, w_3.2, w_6.1, q_3.2, q_6.1]
+11-28 16:38:59.263   485  1951 D CoreBackPreview: Window{cdec1dd u0 ua.svitlo.widget/ua.svitlo.widget.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3b28c23, mPriority=0}
+11-28 16:38:59.647   485   505 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +624ms
+11-28 16:38:59.662   485  2327 W InputManager-JNI: Input channel object '8415f71 Splash Screen ua.svitlo.widget (client)' was disposed without first being removed with the input manager!
+11-28 16:38:59.663   485   840 D CoreBackPreview: Window{8415f71 u0 Splash Screen ua.svitlo.widget EXITING}: Setting back callback null
+11-28 16:38:59.696  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:39:01.279  9381  9381 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:39:04.736   485  2325 I ActivityManager: Force stopping ua.svitlo.widget appid=10174 user=0: from pid 9497
+11-28 16:39:04.738   485  2325 I ActivityManager: Killing 9381:ua.svitlo.widget/u0a174 (adj 0): stop ua.svitlo.widget due to from pid 9497
+11-28 16:39:04.740   485  2325 W ActivityTaskManager: Force removing ActivityRecord{1ec468a u0 ua.svitlo.widget/.MainActivity} t42 f}}: app died, no saved state
+11-28 16:39:04.742   485  2325 W InputManager-JNI: Input channel object 'cdec1dd ua.svitlo.widget/ua.svitlo.widget.MainActivity (client)' was disposed without first being removed with the input manager!
+11-28 16:39:04.777   986   986 D CarrierSvcBindHelper: onHandleForceStop: [ua.svitlo.widget]
+11-28 16:39:04.795   485  1702 V ActivityManager: Got obituary of 9381:ua.svitlo.widget
+11-28 16:39:04.797   485   704 D ConnectivityService: releasing NetworkRequest [ REQUEST id=174, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ] (release request)
+11-28 16:39:05.005   485  2325 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=ua.svitlo.widget/.MainActivity (has extras)} from uid 2000
+11-28 16:39:05.026   485   689 D CoreBackPreview: Window{f583970 u0 Splash Screen ua.svitlo.widget}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@643040f, mPriority=0}
+11-28 16:39:05.040   485   517 I ActivityManager: Start proc 9507:ua.svitlo.widget/u0a174 for next-top-activity {ua.svitlo.widget/ua.svitlo.widget.MainActivity}
+11-28 16:39:05.051  9507  9507 I a.svitlo.widget: Using CollectorTypeCC GC.
+11-28 16:39:05.064  9507  9507 W a.svitlo.widget: Unexpected CPU variant for x86: x86_64.
+11-28 16:39:05.064  9507  9507 W a.svitlo.widget: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 16:39:05.107  9507  9507 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~98nfDsYmk5fR9YUfFKx8XA==/ua.svitlo.widget-jinciGKLzbll5586ZBJpTA==/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/ua.svitlo.widget
+11-28 16:39:05.111  9507  9507 V GraphicsEnvironment: ANGLE Developer option for 'ua.svitlo.widget' set to: 'default'
+11-28 16:39:05.111  9507  9507 V GraphicsEnvironment: ANGLE GameManagerService for ua.svitlo.widget: false
+11-28 16:39:05.139  9507  9507 W a.svitlo.widget: Entry not found
+11-28 16:39:05.173  9507  9541 I cr_VariationsUtils: Failed reading seed file "/data/user/0/ua.svitlo.widget/app_webview/variations_seed_new"
+11-28 16:39:05.183   485   517 I ActivityManager: Start proc 9544:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i7 for  {ua.svitlo.widget/org.chromium.content.app.SandboxedProcessService0:0}
+11-28 16:39:05.234  9507  9567 E chromium: [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/ua.svitlo.widget/cache/WebView/Default/HTTP Cache/Code Cache/js: No such file or directory (2)
+11-28 16:39:05.243   485  1046 D ConnectivityService: requestNetwork for uid/pid:10174/9507 activeRequest: null callbackRequest: 176 [NetworkRequest [ REQUEST id=177, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-28 16:39:05.244   485   697 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=177, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:39:05.245   485   697 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=177, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:39:05.245   485   697 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=177, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:39:05.245   485   697 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=177, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10174 RequestorUid: 10174 RequestorPkg: ua.svitlo.widget UnderlyingNetworks: Null] ]
+11-28 16:39:05.274  9507  9507 I SvitloNotify: topics [news, w_3.2, w_6.1, q_3.2, q_6.1]
+11-28 16:39:05.297   485  1046 D CoreBackPreview: Window{709ecd5 u0 ua.svitlo.widget/ua.svitlo.widget.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8305bdb, mPriority=0}
+11-28 16:39:05.387  9507  9603 I SvitloMain: refresh widget
+11-28 16:39:05.511   485   505 I ActivityTaskManager: Displayed ua.svitlo.widget/.MainActivity: +505ms
+11-28 16:39:05.529   485  2325 D CoreBackPreview: Window{f583970 u0 Splash Screen ua.svitlo.widget EXITING}: Setting back callback null
+11-28 16:39:05.529   485  1046 W InputManager-JNI: Input channel object 'f583970 Splash Screen ua.svitlo.widget (client)' was disposed without first being removed with the input manager!
+11-28 16:39:05.543  9507  9604 I SvitloMain: refresh widget ok
+11-28 16:39:05.544  9507  9507 I SvitloMain: addWidget pin
+11-28 16:39:05.627  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:39:05.808  1024  1024 D b/267448330: provider: ComponentInfo{ua.svitlo.widget/ua.svitlo.widget.CardsWidget}, paddedSizes: [216.0x228.0, 396.0x137.0], getMinMaxSizes: Rect(216, 137 - 396, 228)
+11-28 16:39:07.324  9507  9507 I SvitloMain: web_y 95 statusbar 24 OK
+11-28 16:39:11.767  1447  1447 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=ua.svitlo.widget fieldId=-1 fieldName=null extras=null}, false)
+11-28 16:39:12.773   485  2229 I ActivityTaskManager: moveTaskToBack: Task{dd91104 #43 type=standard A=10174:ua.svitlo.widget}
